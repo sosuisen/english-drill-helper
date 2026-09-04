@@ -14,8 +14,6 @@ import com.sosuisha.domain.repository.DrillRepository;
 import com.sosuisha.domain.service.AudioPlayer;
 
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
@@ -36,8 +34,6 @@ public class DrillViewModel {
     private final ObjectProperty<Optional<Drill>> selectedDrill =
         new SimpleObjectProperty<>(Optional.empty());
     private final ReadOnlyStringWrapper selectedFileName = new ReadOnlyStringWrapper();
-    private final ReadOnlyObjectWrapper<Optional<Instant>> lastPlayedAt =
-        new ReadOnlyObjectWrapper<>(Optional.empty());
     private final AudioPlayer player;
     private final DrillRepository repository;
     private final Clock clock;
@@ -103,16 +99,6 @@ public class DrillViewModel {
     }
 
     /**
-     * Returns the time when the last playback stopped. It is empty until a
-     * playback stops.
-     *
-     * @return read-only property of the time when the last playback stopped
-     */
-    public ReadOnlyObjectProperty<Optional<Instant>> lastPlayedAtProperty() {
-        return lastPlayedAt.getReadOnlyProperty();
-    }
-
-    /**
      * Returns the text of the last played time of the drill, in the time zone
      * of the clock.
      *
@@ -137,15 +123,25 @@ public class DrillViewModel {
 
     private void recordStop(Drill drill) {
         var stoppedAt = clock.instant();
-        lastPlayedAt.set(Optional.of(stoppedAt));
         repository.saveLastPlayedAt(drill.audioFile().fingerprint(), stoppedAt);
-        replaceDrill(drill, drill.withLastPlayedAt(stoppedAt));
+        var updated = drill.withLastPlayedAt(stoppedAt);
+        replaceDrill(updated);
+        selectedDrill.get()
+            .filter(selected -> isSameDrill(selected, updated))
+            .ifPresent(_ -> selectedDrill.set(Optional.of(updated)));
     }
 
-    private void replaceDrill(Drill oldDrill, Drill newDrill) {
-        var index = drills.indexOf(oldDrill);
-        if (index >= 0) {
-            drills.set(index, newDrill);
+    /** Replaces the row of the same drill, found by fingerprint, with the updated one. */
+    private void replaceDrill(Drill updated) {
+        for (var i = 0; i < drills.size(); i++) {
+            if (isSameDrill(drills.get(i), updated)) {
+                drills.set(i, updated);
+                return;
+            }
         }
+    }
+
+    private static boolean isSameDrill(Drill a, Drill b) {
+        return a.audioFile().fingerprint().equals(b.audioFile().fingerprint());
     }
 }

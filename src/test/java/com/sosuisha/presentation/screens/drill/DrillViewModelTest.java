@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
@@ -95,23 +96,6 @@ class DrillViewModelTest {
     }
 
     @Test
-    @DisplayName("再生が停止すると、その時点の時刻が最終再生日時になる")
-    void when_the_playback_stops_the_time_at_that_point_becomes_the_last_played_at() {
-        var stopCallback = new AtomicReference<@Nullable Runnable>();
-        var stoppedAt = Instant.parse("2026-09-05T10:00:00Z");
-        var viewModel = new DrillViewModel(
-            List.of(UNIT_0_1), stopCapturingPlayer(stopCallback), new NullDrillRepository(),
-            Clock.fixed(stoppedAt, ZoneOffset.UTC)
-        );
-        viewModel.selectDrill(UNIT_0_1);
-        viewModel.play();
-
-        Objects.requireNonNull(stopCallback.get()).run();
-
-        assertEquals(Optional.of(stoppedAt), viewModel.lastPlayedAtProperty().get());
-    }
-
-    @Test
     @DisplayName("再生が停止すると、選択中ドリルの指紋をキーに停止時刻がリポジトリへ保存される")
     void when_the_playback_stops_the_stop_time_is_saved_by_the_fingerprint_of_the_selected_drill() {
         var stopCallback = new AtomicReference<@Nullable Runnable>();
@@ -148,6 +132,66 @@ class DrillViewModelTest {
         );
 
         assertEquals("2026-09-05 19:05", viewModel.lastPlayedAtTextOf(played));
+    }
+
+    @Test
+    @DisplayName("再生が停止すると、一覧のそのドリルの行の最終再生日時が停止時刻になる")
+    void when_the_playback_stops_the_row_of_the_drill_in_the_list_gets_the_stop_time() {
+        var stopCallback = new AtomicReference<@Nullable Runnable>();
+        var stoppedAt = Instant.parse("2026-09-05T10:00:00Z");
+        var viewModel = new DrillViewModel(
+            List.of(UNIT_0_1, UNIT_0_2), stopCapturingPlayer(stopCallback),
+            new NullDrillRepository(), Clock.fixed(stoppedAt, ZoneOffset.UTC)
+        );
+        viewModel.selectDrill(UNIT_0_1);
+        viewModel.play();
+
+        Objects.requireNonNull(stopCallback.get()).run();
+
+        assertEquals(
+            List.of(UNIT_0_1.withLastPlayedAt(stoppedAt), UNIT_0_2), viewModel.getDrills()
+        );
+    }
+
+    @Test
+    @DisplayName("同じドリルを2回続けて停止すると、一覧のその行は2回目の停止時刻になる")
+    void stopping_the_same_drill_twice_gives_its_row_the_second_stop_time() {
+        var stopCallback = new AtomicReference<@Nullable Runnable>();
+        var firstStop = Instant.parse("2026-09-05T10:00:00Z");
+        var secondStop = Instant.parse("2026-09-05T11:00:00Z");
+        var now = new AtomicReference<Instant>(firstStop);
+        var viewModel = new DrillViewModel(
+            List.of(UNIT_0_1), stopCapturingPlayer(stopCallback), new NullDrillRepository(),
+            settableClock(now)
+        );
+        viewModel.selectDrill(UNIT_0_1);
+        viewModel.play();
+        Objects.requireNonNull(stopCallback.get()).run();
+        now.set(secondStop);
+
+        viewModel.play();
+        Objects.requireNonNull(stopCallback.get()).run();
+
+        assertEquals(Optional.of(secondStop), viewModel.getDrills().get(0).lastPlayedAt());
+    }
+
+    private static Clock settableClock(AtomicReference<Instant> now) {
+        return new Clock() {
+            @Override
+            public ZoneId getZone() {
+                return ZoneOffset.UTC;
+            }
+
+            @Override
+            public Clock withZone(ZoneId zone) {
+                return this;
+            }
+
+            @Override
+            public Instant instant() {
+                return now.get();
+            }
+        };
     }
 
     private static DrillViewModel newViewModel(List<Drill> drills, AudioPlayer player) {
