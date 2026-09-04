@@ -1,6 +1,8 @@
 package com.sosuisha.presentation.screens.drill;
 
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -10,6 +12,8 @@ import org.jspecify.annotations.Nullable;
 import com.sosuisha.domain.service.AudioPlayer;
 
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
@@ -18,7 +22,8 @@ import javafx.collections.ObservableList;
 
 /**
  * ViewModel for the drill screen. It holds the audio files of the drills and
- * the selected audio file, and plays the selected audio file.
+ * the selected audio file, plays the selected audio file, and records the
+ * time when the playback stopped.
  */
 public class DrillViewModel {
     private final ObservableList<Path> audioFiles = FXCollections.observableArrayList();
@@ -27,18 +32,23 @@ public class DrillViewModel {
     private final ObjectProperty<Optional<Path>> selectedAudioFile =
         new SimpleObjectProperty<>(Optional.empty());
     private final ReadOnlyStringWrapper selectedFileName = new ReadOnlyStringWrapper();
+    private final ReadOnlyObjectWrapper<Optional<Instant>> lastPlayedAt =
+        new ReadOnlyObjectWrapper<>(Optional.empty());
     private final AudioPlayer player;
+    private final Clock clock;
 
     /**
      * Creates the view model.
      *
      * @param audioFiles audio files of the drills, in the order shown to the user
      * @param player player that plays the selected audio file
-     * @throws NullPointerException if audioFiles or player is null
+     * @param clock clock that gives the time when the playback stops
+     * @throws NullPointerException if audioFiles, player, or clock is null
      */
-    public DrillViewModel(List<Path> audioFiles, AudioPlayer player) {
+    public DrillViewModel(List<Path> audioFiles, AudioPlayer player, Clock clock) {
         Objects.requireNonNull(audioFiles, "audioFiles must not be null");
         this.player = Objects.requireNonNull(player, "player must not be null");
+        this.clock = Objects.requireNonNull(clock, "clock must not be null");
         this.audioFiles.setAll(audioFiles);
         selectedFileName.bind(
             selectedAudioFile.map(file -> file.map(DrillViewModel::fileNameOf).orElse(""))
@@ -78,7 +88,21 @@ public class DrillViewModel {
      * Plays the selected audio file. Does nothing while no file is selected.
      */
     public void play() {
-        selectedAudioFile.get().ifPresent(player::play);
+        selectedAudioFile.get().ifPresent(file -> player.play(file, this::recordStop));
+    }
+
+    /**
+     * Returns the time when the last playback stopped. It is empty until a
+     * playback stops.
+     *
+     * @return read-only property of the time when the last playback stopped
+     */
+    public ReadOnlyObjectProperty<Optional<Instant>> lastPlayedAtProperty() {
+        return lastPlayedAt.getReadOnlyProperty();
+    }
+
+    private void recordStop() {
+        lastPlayedAt.set(Optional.of(clock.instant()));
     }
 
     /**

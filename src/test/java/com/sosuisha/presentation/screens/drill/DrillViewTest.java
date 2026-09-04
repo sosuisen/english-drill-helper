@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.testfx.api.FxAssert.verifyThat;
 
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,7 +35,7 @@ class DrillViewTest {
     void setup(Stage stage) {
         var player = new NullAudioPlayer() {
             @Override
-            public void play(Path file) {
+            public void play(Path file, Runnable onStopped) {
                 playedFile.set(file);
             }
 
@@ -44,7 +45,8 @@ class DrillViewTest {
             }
         };
         viewModel = new DrillViewModel(
-            List.of(Path.of("001_Unit 0.1.mp3"), Path.of("002_Unit 0.2.mp3")), player
+            List.of(Path.of("001_Unit 0.1.mp3"), Path.of("002_Unit 0.2.mp3")), player,
+            Clock.systemUTC()
         );
         var view = new DrillView(viewModel);
         stage.setScene(view.getScene());

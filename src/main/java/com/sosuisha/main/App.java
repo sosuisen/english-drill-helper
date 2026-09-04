@@ -1,6 +1,7 @@
 package com.sosuisha.main;
 
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.Objects;
 
 import com.sosuisha.domain.exception.UnrecoverableException;
@@ -45,8 +46,9 @@ public class App extends Application {
         setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         var windowManager = new WindowManager();
         var audioFiles = new FileSystemAudioFolderScanner().scan(AUDIO_FOLDER);
-        windowManager
-            .registerView(new DrillView(new DrillViewModel(audioFiles, new MediaAudioPlayer())));
+        var drillViewModel =
+            new DrillViewModel(audioFiles, new MediaAudioPlayer(), Clock.systemUTC());
+        windowManager.registerView(new DrillView(drillViewModel));
         windowManager.showWindow(FIRST_VIEW, stage);
     }
 }

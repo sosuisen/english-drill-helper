@@ -8,7 +8,7 @@ import java.nio.file.Path;
  */
 public class NullAudioPlayer implements AudioPlayer {
     @Override
-    public void play(Path file) {
+    public void play(Path file, Runnable onStopped) {
         // does nothing
     }
 

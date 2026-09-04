@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Clock;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +27,8 @@ class WindowManagerTest {
     @DisplayName("登録したDrillViewをクラス指定で取得できる")
     void returns_registered_drill_view_by_its_class() {
         var windowManager = new WindowManager();
-        var view = new DrillView(new DrillViewModel(List.of(), new NullAudioPlayer()));
+        var view =
+            new DrillView(new DrillViewModel(List.of(), new NullAudioPlayer(), Clock.systemUTC()));
 
         windowManager.registerView(view);
 
@@ -45,7 +47,8 @@ class WindowManagerTest {
     @DisplayName("showWindowすると、DrillViewのウィンドウが通常のタイトルバー付き（DECORATED）で表示される")
     void show_window_displays_the_drill_view_window_with_the_decorated_style(FxRobot robot) {
         var windowManager = new WindowManager();
-        var view = new DrillView(new DrillViewModel(List.of(), new NullAudioPlayer()));
+        var view =
+            new DrillView(new DrillViewModel(List.of(), new NullAudioPlayer(), Clock.systemUTC()));
         windowManager.registerView(view);
 
         robot.interact(() -> windowManager.showWindow(DrillView.class, new Stage()));

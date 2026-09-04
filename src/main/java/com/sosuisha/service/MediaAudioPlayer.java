@@ -18,10 +18,13 @@ public class MediaAudioPlayer implements AudioPlayer {
     private @Nullable MediaPlayer current;
 
     @Override
-    public void play(Path file) {
+    public void play(Path file, Runnable onStopped) {
         Objects.requireNonNull(file, "file must not be null");
+        Objects.requireNonNull(onStopped, "onStopped must not be null");
         disposeCurrent();
         var player = new MediaPlayer(new Media(file.toUri().toString()));
+        player.setOnEndOfMedia(onStopped);
+        player.setOnStopped(onStopped);
         player.play();
         current = player;
     }
