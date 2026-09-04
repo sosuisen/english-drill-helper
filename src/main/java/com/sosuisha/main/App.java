@@ -52,7 +52,9 @@ public class App extends Application {
         var scanner = new FileSystemAudioFolderScanner(new Sha256Fingerprinter());
         var drills = new DrillLoader(scanner, repository).load(AUDIO_FOLDER);
         var drillViewModel =
-            new DrillViewModel(drills, new MediaAudioPlayer(), repository, Clock.systemUTC());
+            new DrillViewModel(
+                drills, new MediaAudioPlayer(), repository, Clock.systemDefaultZone()
+            );
         windowManager.registerView(new DrillView(drillViewModel));
         windowManager.showWindow(FIRST_VIEW, stage);
     }

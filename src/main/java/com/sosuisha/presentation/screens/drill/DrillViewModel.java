@@ -2,6 +2,7 @@ package com.sosuisha.presentation.screens.drill;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -26,6 +27,9 @@ import javafx.collections.ObservableList;
  * plays the selected drill, and records the time when the playback stopped.
  */
 public class DrillViewModel {
+    private static final DateTimeFormatter LAST_PLAYED_AT_FORMAT =
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
     private final ObservableList<Drill> drills = FXCollections.observableArrayList();
     private final ObservableList<Drill> readOnlyDrills =
         FXCollections.unmodifiableObservableList(drills);
@@ -106,6 +110,22 @@ public class DrillViewModel {
      */
     public ReadOnlyObjectProperty<Optional<Instant>> lastPlayedAtProperty() {
         return lastPlayedAt.getReadOnlyProperty();
+    }
+
+    /**
+     * Returns the text of the last played time of the drill, in the time zone
+     * of the clock.
+     *
+     * @param drill drill whose last played time is shown
+     * @return the time as {@code yyyy-MM-dd HH:mm}, or an empty string if the drill has never
+     *         been played
+     * @throws NullPointerException if drill is null
+     */
+    public String lastPlayedAtTextOf(Drill drill) {
+        Objects.requireNonNull(drill, "drill must not be null");
+        return drill.lastPlayedAt()
+            .map(LAST_PLAYED_AT_FORMAT.withZone(clock.getZone())::format)
+            .orElse("");
     }
 
     /**

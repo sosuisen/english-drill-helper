@@ -138,6 +138,18 @@ class DrillViewModelTest {
         assertEquals(stoppedAt, savedPlayedAt.get());
     }
 
+    @Test
+    @DisplayName("最終再生日時の表示文字は、Clockの時刻帯での「yyyy-MM-dd HH:mm」である")
+    void the_text_of_the_last_played_at_is_yyyy_mm_dd_hh_mm_in_the_zone_of_the_clock() {
+        var played = UNIT_0_1.withLastPlayedAt(Instant.parse("2026-09-05T10:05:00Z"));
+        var viewModel = new DrillViewModel(
+            List.of(played), new NullAudioPlayer(), new NullDrillRepository(),
+            Clock.fixed(Instant.EPOCH, ZoneOffset.ofHours(9))
+        );
+
+        assertEquals("2026-09-05 19:05", viewModel.lastPlayedAtTextOf(played));
+    }
+
     private static DrillViewModel newViewModel(List<Drill> drills, AudioPlayer player) {
         return new DrillViewModel(drills, player, new NullDrillRepository(), Clock.systemUTC());
     }

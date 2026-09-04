@@ -10,7 +10,7 @@ TDDの作業用todo。使い捨て。
 - [x] 走査時に各ファイルへ指紋を付与する（FileSystemAudioFolderScanner が AudioFile を返す）
 - [x] DBファイルの場所をシステムプロパティ edh.drill.db で上書きできる（既定は ~/.english-drill-helper/drill.db）。AppTest は @TempDir の DB を使う
 - [x] 一覧の組み立て（走査＋記録の照合）を DrillLoader に移し、DrillViewModel は List<Drill> を受け取るだけにする
-- [ ] リストに最終再生日時が記録される
+- [x] リストに最終再生日時が記録される（セルにファイル名と日時を表示）
 - [ ] 停止すると、一覧のその行の最終再生日時が更新される（replaceDrill はテストなしで書いた実装。テストで裏付ける）
 - [ ] 同じドリルを2回続けて停止しても、2回目も行が更新される（行の検索をオブジェクト同一性ではなく指紋で行う）
 - [ ] lastPlayedAtProperty() は行に日時が付いたため役割が重なる。表示の実装が固まったら削除を検討

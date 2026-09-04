@@ -6,6 +6,8 @@ import static org.testfx.api.FxAssert.verifyThat;
 
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,6 +38,10 @@ class DrillViewTest {
     private static final Drill UNIT_0_2 = new Drill(
         new AudioFile(Path.of("002_Unit 0.2.mp3"), "fingerprint-of-unit-0-2"), Optional.empty()
     );
+    private static final Drill PLAYED_UNIT_0_3 = new Drill(
+        new AudioFile(Path.of("003_Unit 0.3.mp3"), "fingerprint-of-unit-0-3"),
+        Optional.of(Instant.parse("2026-09-05T10:00:00Z"))
+    );
 
     private DrillViewModel viewModel;
     private final AtomicReference<@Nullable Path> playedFile = new AtomicReference<>();
@@ -55,7 +61,8 @@ class DrillViewTest {
             }
         };
         viewModel = new DrillViewModel(
-            List.of(UNIT_0_1, UNIT_0_2), player, new NullDrillRepository(), Clock.systemUTC()
+            List.of(UNIT_0_1, UNIT_0_2, PLAYED_UNIT_0_3), player, new NullDrillRepository(),
+            Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)
         );
         var view = new DrillView(viewModel);
         stage.setScene(view.getScene());
@@ -70,6 +77,12 @@ class DrillViewTest {
         ListView<Drill> listView = robot.lookup("#drills").queryAs(ListView.class);
 
         assertEquals(viewModel.getDrills(), listView.getItems());
+    }
+
+    @Test
+    @DisplayName("再生済みのドリルのセルには、ファイル名と最終再生日時が表示される")
+    void the_cell_of_a_played_drill_shows_the_file_name_and_the_last_played_at(FxRobot robot) {
+        assertTrue(robot.lookup("003_Unit 0.3.mp3  2026-09-05 10:00").tryQuery().isPresent());
     }
 
     @Test

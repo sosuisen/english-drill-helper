@@ -59,7 +59,7 @@ public class DrillView implements View {
                         ListViewBuilder.<Drill>create()
                             .id("drills")
                             .items(viewModel.getDrills())
-                            .cellFactory(_ -> fileNameCell())
+                            .cellFactory(_ -> drillCell())
                             .hGrowInHBox(Priority.ALWAYS)
                             .apply(
                                 listView -> listView.getSelectionModel()
@@ -104,13 +104,18 @@ public class DrillView implements View {
             .build();
     }
 
-    private static ListCell<Drill> fileNameCell() {
+    private ListCell<Drill> drillCell() {
         return new ListCell<>() {
             @Override
             protected void updateItem(@Nullable Drill item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(item == null || empty ? null : item.fileName());
+                setText(item == null || empty ? null : cellTextOf(item));
             }
         };
+    }
+
+    private String cellTextOf(Drill drill) {
+        var lastPlayedAt = viewModel.lastPlayedAtTextOf(drill);
+        return lastPlayedAt.isEmpty() ? drill.fileName() : drill.fileName() + "  " + lastPlayedAt;
     }
 }
