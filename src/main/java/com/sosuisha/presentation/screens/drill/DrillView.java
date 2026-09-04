@@ -5,10 +5,13 @@ import java.util.Objects;
 
 import com.sosuisha.presentation.View;
 
+import atlantafx.base.theme.Styles;
+import io.github.sosuisen.jfxbuilder.controls.ButtonBuilder;
 import io.github.sosuisen.jfxbuilder.controls.LabelBuilder;
 import io.github.sosuisen.jfxbuilder.controls.ListViewBuilder;
 import io.github.sosuisen.jfxbuilder.graphics.HBoxBuilder;
 import io.github.sosuisen.jfxbuilder.graphics.SceneBuilder;
+import io.github.sosuisen.jfxbuilder.graphics.VBoxBuilder;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.layout.Priority;
@@ -60,11 +63,32 @@ public class DrillView implements View {
                                     .subscribe(viewModel::selectAudioFile)
                             )
                             .build(),
-                        LabelBuilder.create()
-                            .id("selectedFileName")
-                            .textPropertyApply(
-                                text -> text.bind(viewModel.selectedFileNameProperty())
+                        VBoxBuilder
+                            .withChildren(
+                                LabelBuilder.create()
+                                    .id("selectedFileName")
+                                    .textPropertyApply(
+                                        text -> text.bind(viewModel.selectedFileNameProperty())
+                                    )
+                                    .build(),
+                                HBoxBuilder
+                                    .withChildren(
+                                        ButtonBuilder.create()
+                                            .id("play")
+                                            .text("Play")
+                                            .addStyleClass(Styles.ACCENT)
+                                            .onAction(_ -> viewModel.play())
+                                            .build(),
+                                        ButtonBuilder.create()
+                                            .id("stop")
+                                            .text("Stop")
+                                            .onAction(_ -> viewModel.stop())
+                                            .build()
+                                    )
+                                    .spacing(10)
+                                    .build()
                             )
+                            .spacing(10)
                             .build()
                     )
                     .spacing(10)

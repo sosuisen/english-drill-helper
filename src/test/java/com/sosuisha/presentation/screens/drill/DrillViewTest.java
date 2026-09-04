@@ -1,10 +1,13 @@
 package com.sosuisha.presentation.screens.drill;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.testfx.api.FxAssert.verifyThat;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,7 +15,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.api.FxRobot;
 import org.testfx.framework.junit5.ApplicationExtension;
 import org.testfx.framework.junit5.Start;
+import org.jspecify.annotations.Nullable;
 import org.testfx.matcher.control.LabeledMatchers;
+
+import com.sosuisha.domain.service.NullAudioPlayer;
+
 
 import javafx.scene.control.ListView;
 import javafx.stage.Stage;
@@ -20,11 +27,24 @@ import javafx.stage.Stage;
 @ExtendWith(ApplicationExtension.class)
 class DrillViewTest {
     private DrillViewModel viewModel;
+    private final AtomicReference<@Nullable Path> playedFile = new AtomicReference<>();
+    private final AtomicBoolean stopped = new AtomicBoolean(false);
 
     @Start
     void setup(Stage stage) {
+        var player = new NullAudioPlayer() {
+            @Override
+            public void play(Path file) {
+                playedFile.set(file);
+            }
+
+            @Override
+            public void stop() {
+                stopped.set(true);
+            }
+        };
         viewModel = new DrillViewModel(
-            List.of(Path.of("001_Unit 0.1.mp3"), Path.of("002_Unit 0.2.mp3"))
+            List.of(Path.of("001_Unit 0.1.mp3"), Path.of("002_Unit 0.2.mp3")), player
         );
         var view = new DrillView(viewModel);
         stage.setScene(view.getScene());
@@ -49,5 +69,29 @@ class DrillViewTest {
 
         assertEquals("002_Unit 0.2.mp3", viewModel.selectedFileNameProperty().get());
         verifyThat("#selectedFileName", LabeledMatchers.hasText("002_Unit 0.2.mp3"));
+    }
+
+    @Test
+    @DisplayName("画面に再生ボタンが表示される")
+    void the_screen_shows_a_play_button() {
+        verifyThat("#play", LabeledMatchers.hasText("Play"));
+    }
+
+    @Test
+    @DisplayName("ファイルを選んで再生ボタンを押すと、そのファイルが再生される")
+    void selecting_a_file_and_clicking_play_plays_the_file(FxRobot robot) {
+        robot.clickOn("001_Unit 0.1.mp3");
+
+        robot.clickOn("#play");
+
+        assertEquals(Path.of("001_Unit 0.1.mp3"), playedFile.get());
+    }
+
+    @Test
+    @DisplayName("停止ボタンを押すと、再生が停止する")
+    void clicking_stop_stops_the_playback(FxRobot robot) {
+        robot.clickOn("#stop");
+
+        assertTrue(stopped.get());
     }
 }

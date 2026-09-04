@@ -10,6 +10,7 @@ import com.sosuisha.presentation.screens.alert.AlertDialog;
 import com.sosuisha.presentation.screens.drill.DrillView;
 import com.sosuisha.presentation.screens.drill.DrillViewModel;
 import com.sosuisha.service.FileSystemAudioFolderScanner;
+import com.sosuisha.service.MediaAudioPlayer;
 
 import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
@@ -44,7 +45,8 @@ public class App extends Application {
         setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         var windowManager = new WindowManager();
         var audioFiles = new FileSystemAudioFolderScanner().scan(AUDIO_FOLDER);
-        windowManager.registerView(new DrillView(new DrillViewModel(audioFiles)));
+        windowManager
+            .registerView(new DrillView(new DrillViewModel(audioFiles, new MediaAudioPlayer())));
         windowManager.showWindow(FIRST_VIEW, stage);
     }
 }
