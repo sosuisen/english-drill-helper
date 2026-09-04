@@ -1,5 +1,6 @@
 package com.sosuisha.main;
 
+import java.nio.file.Path;
 import java.util.Objects;
 
 import com.sosuisha.domain.exception.UnrecoverableException;
@@ -8,6 +9,7 @@ import com.sosuisha.presentation.WindowManager;
 import com.sosuisha.presentation.screens.alert.AlertDialog;
 import com.sosuisha.presentation.screens.drill.DrillView;
 import com.sosuisha.presentation.screens.drill.DrillViewModel;
+import com.sosuisha.service.FileSystemAudioFolderScanner;
 
 import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
@@ -19,6 +21,8 @@ import javafx.stage.Stage;
 public class App extends Application {
     /** Change this constant during development to open another window first. */
     static final Class<? extends View> FIRST_VIEW = DrillView.class;
+    /** Fixed folder that holds the drill audio files. */
+    static final Path AUDIO_FOLDER = Path.of("D:\\Dropbox\\英語のハノン_210407");
 
     /**
      * Composition root that wires the dependencies and shows the first window.
@@ -39,7 +43,8 @@ public class App extends Application {
         });
         setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         var windowManager = new WindowManager();
-        windowManager.registerView(new DrillView(new DrillViewModel()));
+        var audioFiles = new FileSystemAudioFolderScanner().scan(AUDIO_FOLDER);
+        windowManager.registerView(new DrillView(new DrillViewModel(audioFiles)));
         windowManager.showWindow(FIRST_VIEW, stage);
     }
 }

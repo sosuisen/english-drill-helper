@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Path;
 import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
@@ -45,5 +46,11 @@ class AppTest {
 
         assertNotNull(stylesheet);
         assertTrue(stylesheet.endsWith("primer-light.css"));
+    }
+
+    @Test
+    @DisplayName("決められた音声フォルダは D:\\Dropbox\\英語のハノン_210407 である")
+    void the_fixed_audio_folder_is_the_hanon_folder_in_dropbox() {
+        assertEquals(Path.of("D:\\Dropbox\\英語のハノン_210407"), App.AUDIO_FOLDER);
     }
 }

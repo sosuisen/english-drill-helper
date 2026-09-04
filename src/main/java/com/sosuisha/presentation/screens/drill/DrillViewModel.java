@@ -1,13 +1,20 @@
 package com.sosuisha.presentation.screens.drill;
 
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
+
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 /**
- * ViewModel for the drill screen. It holds the question shown to the user,
- * the answer typed by the user, and the feedback to the answer.
+ * ViewModel for the drill screen. It holds the audio files of the drills,
+ * the question shown to the user, the answer typed by the user, and the
+ * feedback to the answer.
  */
 public class DrillViewModel {
     private static final String INITIAL_QUESTION = "Type any English sentence and press Check.";
@@ -16,6 +23,30 @@ public class DrillViewModel {
     private final ReadOnlyStringWrapper question = new ReadOnlyStringWrapper(INITIAL_QUESTION);
     private final StringProperty answer = new SimpleStringProperty("");
     private final ReadOnlyStringWrapper feedback = new ReadOnlyStringWrapper("");
+    private final ObservableList<Path> audioFiles = FXCollections.observableArrayList();
+    private final ObservableList<Path> readOnlyAudioFiles =
+        FXCollections.unmodifiableObservableList(audioFiles);
+
+    /**
+     * Creates the view model.
+     *
+     * @param audioFiles audio files of the drills, in the order shown to the user
+     * @throws NullPointerException if audioFiles is null
+     */
+    public DrillViewModel(List<Path> audioFiles) {
+        Objects.requireNonNull(audioFiles, "audioFiles must not be null");
+        this.audioFiles.setAll(audioFiles);
+    }
+
+    /**
+     * Returns the audio files of the drills, in the order shown to the user.
+     * The list cannot be modified by the caller.
+     *
+     * @return read-only observable list of the audio files
+     */
+    ObservableList<Path> getAudioFiles() {
+        return readOnlyAudioFiles;
+    }
 
     /**
      * Returns the question shown to the user.

@@ -3,6 +3,8 @@ package com.sosuisha.presentation.screens.drill;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.testfx.api.FxAssert.verifyThat;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +22,7 @@ class DrillViewTest {
 
     @Start
     void setup(Stage stage) {
-        viewModel = new DrillViewModel();
+        viewModel = new DrillViewModel(List.of());
         var view = new DrillView(viewModel);
         stage.setScene(view.getScene());
         stage.setTitle(view.getTitle());
