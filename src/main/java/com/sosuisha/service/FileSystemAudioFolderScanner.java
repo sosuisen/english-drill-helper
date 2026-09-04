@@ -9,27 +9,57 @@ import java.util.Objects;
 import java.util.Set;
 
 import com.sosuisha.domain.exception.AudioFolderScanException;
+import com.sosuisha.domain.model.AudioFile;
+import com.sosuisha.domain.service.Fingerprinter;
 
 /**
- * Lists the audio files in a folder on the file system.
+ * Lists the audio files in a folder on the file system, with the fingerprint
+ * of each file.
  */
 public class FileSystemAudioFolderScanner {
     private static final Set<String> AUDIO_EXTENSIONS = Set.of(".mp3", ".m4a");
 
+    private final Fingerprinter fingerprinter;
+
     /**
-     * Lists the audio files (mp3 and m4a, any letter case) in the folder in name order.
+     * Creates the scanner.
+     *
+     * @param fingerprinter computes the fingerprint of each audio file
+     * @throws NullPointerException if fingerprinter is null
+     */
+    public FileSystemAudioFolderScanner(Fingerprinter fingerprinter) {
+        this.fingerprinter =
+            Objects.requireNonNull(fingerprinter, "fingerprinter must not be null");
+    }
+
+    /**
+     * Lists the audio files (mp3 and m4a, any letter case) in the folder in
+     * name order, with the fingerprint of each file.
      *
      * @param folder folder that holds the audio files
-     * @return paths of the audio files, sorted by name
+     * @return the audio files, sorted by name
      * @throws NullPointerException if folder is null
-     * @throws AudioFolderScanException if the folder does not exist or cannot be read
+     * @throws AudioFolderScanException if the folder does not exist or cannot be read, or an
+     *             audio file cannot be read
      */
-    public List<Path> scan(Path folder) throws AudioFolderScanException {
+    public List<AudioFile> scan(Path folder) throws AudioFolderScanException {
         Objects.requireNonNull(folder, "folder must not be null");
+        return listAudioPaths(folder).stream().map(this::toAudioFile).toList();
+    }
+
+    private static List<Path> listAudioPaths(Path folder) {
         try (var entries = Files.list(folder)) {
             return entries.filter(FileSystemAudioFolderScanner::isAudioFile).sorted().toList();
         } catch (IOException e) {
             throw new AudioFolderScanException("Cannot read the audio folder: " + folder, e);
+        }
+    }
+
+    private AudioFile toAudioFile(Path path) {
+        try {
+            return new AudioFile(path, fingerprinter.fingerprint(path));
+        } catch (IOException e) {
+            throw new AudioFolderScanException("Cannot read the audio file: " + path, e);
         }
     }
 

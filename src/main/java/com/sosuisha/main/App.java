@@ -1,13 +1,10 @@
 package com.sosuisha.main;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Objects;
 
-import com.sosuisha.domain.exception.AudioFolderScanException;
 import com.sosuisha.domain.exception.UnrecoverableException;
-import com.sosuisha.domain.model.AudioFile;
 import com.sosuisha.presentation.View;
 import com.sosuisha.presentation.WindowManager;
 import com.sosuisha.presentation.screens.alert.AlertDialog;
@@ -53,24 +50,13 @@ public class App extends Application {
         });
         setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         var windowManager = new WindowManager();
-        var fingerprinter = new Sha256Fingerprinter();
-        var audioFiles = new FileSystemAudioFolderScanner().scan(AUDIO_FOLDER)
-            .stream()
-            .map(path -> new AudioFile(path, fingerprintOf(fingerprinter, path)))
-            .toList();
+        var audioFiles =
+            new FileSystemAudioFolderScanner(new Sha256Fingerprinter()).scan(AUDIO_FOLDER);
         var repository = new SqliteDrillRepository(DRILL_DB);
         var drillViewModel = new DrillViewModel(
             audioFiles, new MediaAudioPlayer(), repository, Clock.systemUTC()
         );
         windowManager.registerView(new DrillView(drillViewModel));
         windowManager.showWindow(FIRST_VIEW, stage);
-    }
-
-    private static String fingerprintOf(Sha256Fingerprinter fingerprinter, Path path) {
-        try {
-            return fingerprinter.fingerprint(path);
-        } catch (IOException e) {
-            throw new AudioFolderScanException("Cannot read the audio file: " + path, e);
-        }
     }
 }
