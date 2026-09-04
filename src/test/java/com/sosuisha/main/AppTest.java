@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,13 +23,28 @@ import javafx.stage.Stage;
 @ExtendWith(ApplicationExtension.class)
 class AppTest {
     private Stage stage;
+    private Path drillDb;
 
     @Start
-    void setup(Stage stage) {
+    void setup(Stage stage) throws Exception {
+        var folder = Files.createTempDirectory("english-drill-helper-test");
+        drillDb = folder.resolve("drill.db");
+        System.setProperty("edh.drill.db", drillDb.toString());
         // The injected primary stage is reused across tests and rejects
         // initStyle, so App gets a fresh stage.
         this.stage = new Stage();
         new App().start(this.stage);
+    }
+
+    @AfterEach
+    void cleanup() {
+        System.clearProperty("edh.drill.db");
+    }
+
+    @Test
+    @DisplayName("起動すると、edh.drill.dbで指定した場所にDBファイルが作られる")
+    void app_startup_creates_the_database_file_at_the_place_given_by_edh_drill_db() {
+        assertTrue(Files.exists(drillDb));
     }
 
     @Test

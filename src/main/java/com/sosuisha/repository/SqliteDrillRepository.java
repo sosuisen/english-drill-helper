@@ -32,10 +32,37 @@ import com.sosuisha.domain.repository.DrillRepository;
  * callers see one exception type and jOOQ types do not leak out.
  */
 public class SqliteDrillRepository implements DrillRepository {
+    /** Default SQLite file, in the user home. */
+    public static final Path DEFAULT_FILE =
+        Path.of(System.getProperty("user.home"), ".english-drill-helper", "drill.db");
+
+    private static final String FILE_PROPERTY = "edh.drill.db";
     private static final String SCHEMA_RESOURCE = "/db/schema.sql";
 
     private final Path file;
     private final String url;
+
+    /**
+     * Resolves the path of the SQLite database file. The system property
+     * {@code edh.drill.db} takes precedence over {@link #DEFAULT_FILE}.
+     *
+     * @return path of the SQLite database file
+     */
+    static Path resolveFile() {
+        var override = System.getProperty(FILE_PROPERTY);
+        if (override != null) { return Path.of(override); }
+        return DEFAULT_FILE;
+    }
+
+    /**
+     * Creates the database on the SQLite file resolved by {@link #resolveFile()}.
+     *
+     * @throws RepositoryException if the parent folder cannot be created or the
+     *             database cannot be opened
+     */
+    public SqliteDrillRepository() throws RepositoryException {
+        this(resolveFile());
+    }
 
     /**
      * Creates the database on the given SQLite file. The file, its parent

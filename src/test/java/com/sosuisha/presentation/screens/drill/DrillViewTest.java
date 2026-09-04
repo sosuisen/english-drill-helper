@@ -7,6 +7,7 @@ import static org.testfx.api.FxAssert.verifyThat;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -20,6 +21,7 @@ import org.testfx.framework.junit5.Start;
 import org.testfx.matcher.control.LabeledMatchers;
 
 import com.sosuisha.domain.model.AudioFile;
+import com.sosuisha.domain.model.Drill;
 import com.sosuisha.domain.repository.NullDrillRepository;
 import com.sosuisha.domain.service.NullAudioPlayer;
 
@@ -28,10 +30,12 @@ import javafx.stage.Stage;
 
 @ExtendWith(ApplicationExtension.class)
 class DrillViewTest {
-    private static final AudioFile UNIT_0_1 =
-        new AudioFile(Path.of("001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1");
-    private static final AudioFile UNIT_0_2 =
-        new AudioFile(Path.of("002_Unit 0.2.mp3"), "fingerprint-of-unit-0-2");
+    private static final Drill UNIT_0_1 = new Drill(
+        new AudioFile(Path.of("001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1"), Optional.empty()
+    );
+    private static final Drill UNIT_0_2 = new Drill(
+        new AudioFile(Path.of("002_Unit 0.2.mp3"), "fingerprint-of-unit-0-2"), Optional.empty()
+    );
 
     private DrillViewModel viewModel;
     private final AtomicReference<@Nullable Path> playedFile = new AtomicReference<>();
@@ -63,9 +67,9 @@ class DrillViewTest {
     @DisplayName("画面に音声ファイルの一覧が表示される")
     void the_screen_shows_the_list_of_audio_files(FxRobot robot) {
         @SuppressWarnings("unchecked")
-        ListView<AudioFile> listView = robot.lookup("#audioFiles").queryAs(ListView.class);
+        ListView<Drill> listView = robot.lookup("#drills").queryAs(ListView.class);
 
-        assertEquals(viewModel.getAudioFiles(), listView.getItems());
+        assertEquals(viewModel.getDrills(), listView.getItems());
     }
 
     @Test
@@ -85,7 +89,7 @@ class DrillViewTest {
 
         robot.clickOn("#play");
 
-        assertEquals(UNIT_0_1.path(), playedFile.get());
+        assertEquals(UNIT_0_1.audioFile().path(), playedFile.get());
     }
 
     @Test

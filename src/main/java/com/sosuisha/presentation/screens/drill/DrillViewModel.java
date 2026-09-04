@@ -8,7 +8,7 @@ import java.util.Optional;
 
 import org.jspecify.annotations.Nullable;
 
-import com.sosuisha.domain.model.AudioFile;
+import com.sosuisha.domain.model.Drill;
 import com.sosuisha.domain.repository.DrillRepository;
 import com.sosuisha.domain.service.AudioPlayer;
 
@@ -22,15 +22,14 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 /**
- * ViewModel for the drill screen. It holds the audio files of the drills and
- * the selected audio file, plays the selected audio file, and records the
- * time when the playback stopped.
+ * ViewModel for the drill screen. It holds the drills and the selected drill,
+ * plays the selected drill, and records the time when the playback stopped.
  */
 public class DrillViewModel {
-    private final ObservableList<AudioFile> audioFiles = FXCollections.observableArrayList();
-    private final ObservableList<AudioFile> readOnlyAudioFiles =
-        FXCollections.unmodifiableObservableList(audioFiles);
-    private final ObjectProperty<Optional<AudioFile>> selectedAudioFile =
+    private final ObservableList<Drill> drills = FXCollections.observableArrayList();
+    private final ObservableList<Drill> readOnlyDrills =
+        FXCollections.unmodifiableObservableList(drills);
+    private final ObjectProperty<Optional<Drill>> selectedDrill =
         new SimpleObjectProperty<>(Optional.empty());
     private final ReadOnlyStringWrapper selectedFileName = new ReadOnlyStringWrapper();
     private final ReadOnlyObjectWrapper<Optional<Instant>> lastPlayedAt =
@@ -42,46 +41,46 @@ public class DrillViewModel {
     /**
      * Creates the view model.
      *
-     * @param audioFiles audio files of the drills, in the order shown to the user
-     * @param player player that plays the selected audio file
+     * @param drills drills, in the order shown to the user
+     * @param player player that plays the selected drill
      * @param repository database that keeps the records of the drills
      * @param clock clock that gives the time when the playback stops
      * @throws NullPointerException if any argument is null
      */
     public DrillViewModel(
-        List<AudioFile> audioFiles, AudioPlayer player, DrillRepository repository, Clock clock) {
-        Objects.requireNonNull(audioFiles, "audioFiles must not be null");
+        List<Drill> drills, AudioPlayer player, DrillRepository repository, Clock clock) {
+        Objects.requireNonNull(drills, "drills must not be null");
         this.player = Objects.requireNonNull(player, "player must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
-        this.audioFiles.setAll(audioFiles);
+        this.drills.setAll(drills);
         selectedFileName.bind(
-            selectedAudioFile.map(file -> file.map(AudioFile::fileName).orElse(""))
+            selectedDrill.map(drill -> drill.map(Drill::fileName).orElse(""))
         );
     }
 
     /**
-     * Returns the audio files of the drills, in the order shown to the user.
-     * The list cannot be modified by the caller.
+     * Returns the drills, in the order shown to the user. The list cannot be
+     * modified by the caller.
      *
-     * @return read-only observable list of the audio files
+     * @return read-only observable list of the drills
      */
-    ObservableList<AudioFile> getAudioFiles() {
-        return readOnlyAudioFiles;
+    ObservableList<Drill> getDrills() {
+        return readOnlyDrills;
     }
 
     /**
-     * Selects an audio file.
+     * Selects a drill.
      *
-     * @param file audio file to select, or null to clear the selection
+     * @param drill drill to select, or null to clear the selection
      */
-    public void selectAudioFile(@Nullable AudioFile file) {
-        selectedAudioFile.set(Optional.ofNullable(file));
+    public void selectDrill(@Nullable Drill drill) {
+        selectedDrill.set(Optional.ofNullable(drill));
     }
 
     /**
-     * Returns the file name of the selected audio file. It is an empty string
-     * while no file is selected.
+     * Returns the file name of the selected drill. It is an empty string while
+     * no drill is selected.
      *
      * @return read-only string property of the selected file name
      */
@@ -90,13 +89,13 @@ public class DrillViewModel {
     }
 
     /**
-     * Plays the selected audio file. Does nothing while no file is selected.
-     * When the playback stops, the time is recorded as the last played time
-     * of the file.
+     * Plays the selected drill. Does nothing while no drill is selected. When
+     * the playback stops, the time is recorded as the last played time of the
+     * drill.
      */
     public void play() {
-        selectedAudioFile.get()
-            .ifPresent(file -> player.play(file.path(), () -> recordStop(file)));
+        selectedDrill.get()
+            .ifPresent(drill -> player.play(drill.audioFile().path(), () -> recordStop(drill)));
     }
 
     /**
@@ -116,9 +115,17 @@ public class DrillViewModel {
         player.stop();
     }
 
-    private void recordStop(AudioFile file) {
+    private void recordStop(Drill drill) {
         var stoppedAt = clock.instant();
         lastPlayedAt.set(Optional.of(stoppedAt));
-        repository.saveLastPlayedAt(file.fingerprint(), stoppedAt);
+        repository.saveLastPlayedAt(drill.audioFile().fingerprint(), stoppedAt);
+        replaceDrill(drill, drill.withLastPlayedAt(stoppedAt));
+    }
+
+    private void replaceDrill(Drill oldDrill, Drill newDrill) {
+        var index = drills.indexOf(oldDrill);
+        if (index >= 0) {
+            drills.set(index, newDrill);
+        }
     }
 }

@@ -19,51 +19,56 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.sosuisha.domain.model.AudioFile;
+import com.sosuisha.domain.model.Drill;
 import com.sosuisha.domain.repository.NullDrillRepository;
 import com.sosuisha.domain.service.AudioPlayer;
 import com.sosuisha.domain.service.NullAudioPlayer;
 
 class DrillViewModelTest {
-    private static final AudioFile UNIT_0_1 =
-        new AudioFile(Path.of("drills", "001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1");
-    private static final AudioFile UNIT_0_2 =
-        new AudioFile(Path.of("drills", "002_Unit 0.2.mp3"), "fingerprint-of-unit-0-2");
+    private static final Drill UNIT_0_1 = new Drill(
+        new AudioFile(Path.of("drills", "001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1"),
+        Optional.empty()
+    );
+    private static final Drill UNIT_0_2 = new Drill(
+        new AudioFile(Path.of("drills", "002_Unit 0.2.mp3"), "fingerprint-of-unit-0-2"),
+        Optional.empty()
+    );
 
     @Test
-    @DisplayName("渡された音声ファイルの一覧を、渡された順序のまま保持する")
-    void holds_the_given_audio_files_in_the_given_order() {
-        var files = List.of(UNIT_0_1, UNIT_0_2);
+    @DisplayName("渡されたドリルの一覧を、渡された順序のまま保持する")
+    void holds_the_given_drills_in_the_given_order() {
+        var drills = List.of(UNIT_0_1, UNIT_0_2);
 
-        var viewModel = newViewModel(files, new NullAudioPlayer());
+        var viewModel = newViewModel(drills, new NullAudioPlayer());
 
-        assertEquals(files, viewModel.getAudioFiles());
+        assertEquals(drills, viewModel.getDrills());
     }
 
     @Test
-    @DisplayName("音声ファイルを選ぶと、そのファイル名が選択中のファイル名になる")
-    void selecting_an_audio_file_makes_its_file_name_the_selected_file_name() {
+    @DisplayName("ドリルを選ぶと、そのファイル名が選択中のファイル名になる")
+    void selecting_a_drill_makes_its_file_name_the_selected_file_name() {
         var viewModel = newViewModel(List.of(UNIT_0_1), new NullAudioPlayer());
 
-        viewModel.selectAudioFile(UNIT_0_1);
+        viewModel.selectDrill(UNIT_0_1);
 
         assertEquals("001_Unit 0.1.mp3", viewModel.selectedFileNameProperty().get());
     }
 
     @Test
-    @DisplayName("音声ファイルを選んで再生すると、そのファイルがプレイヤーで再生される")
-    void playing_with_a_selected_audio_file_plays_the_file_with_the_player() {
+    @DisplayName("ドリルを選んで再生すると、その音声ファイルがプレイヤーで再生される")
+    void playing_with_a_selected_drill_plays_its_audio_file_with_the_player() {
         var playedFile = new AtomicReference<@Nullable Path>();
         var viewModel = newViewModel(List.of(UNIT_0_1), recordingPlayer(playedFile));
-        viewModel.selectAudioFile(UNIT_0_1);
+        viewModel.selectDrill(UNIT_0_1);
 
         viewModel.play();
 
-        assertEquals(UNIT_0_1.path(), playedFile.get());
+        assertEquals(UNIT_0_1.audioFile().path(), playedFile.get());
     }
 
     @Test
-    @DisplayName("音声ファイルを選んでいない状態で再生しても、何も再生されない")
-    void playing_without_a_selected_audio_file_plays_nothing() {
+    @DisplayName("ドリルを選んでいない状態で再生しても、何も再生されない")
+    void playing_without_a_selected_drill_plays_nothing() {
         var playedFile = new AtomicReference<@Nullable Path>();
         var viewModel = newViewModel(List.of(UNIT_0_1), recordingPlayer(playedFile));
 
@@ -98,7 +103,7 @@ class DrillViewModelTest {
             List.of(UNIT_0_1), stopCapturingPlayer(stopCallback), new NullDrillRepository(),
             Clock.fixed(stoppedAt, ZoneOffset.UTC)
         );
-        viewModel.selectAudioFile(UNIT_0_1);
+        viewModel.selectDrill(UNIT_0_1);
         viewModel.play();
 
         Objects.requireNonNull(stopCallback.get()).run();
@@ -107,8 +112,8 @@ class DrillViewModelTest {
     }
 
     @Test
-    @DisplayName("再生が停止すると、選択中ファイルの指紋をキーに停止時刻がリポジトリへ保存される")
-    void when_the_playback_stops_the_stop_time_is_saved_by_the_fingerprint_of_the_selected_file() {
+    @DisplayName("再生が停止すると、選択中ドリルの指紋をキーに停止時刻がリポジトリへ保存される")
+    void when_the_playback_stops_the_stop_time_is_saved_by_the_fingerprint_of_the_selected_drill() {
         var stopCallback = new AtomicReference<@Nullable Runnable>();
         var savedFingerprint = new AtomicReference<@Nullable String>();
         var savedPlayedAt = new AtomicReference<@Nullable Instant>();
@@ -124,7 +129,7 @@ class DrillViewModelTest {
             List.of(UNIT_0_1), stopCapturingPlayer(stopCallback), repository,
             Clock.fixed(stoppedAt, ZoneOffset.UTC)
         );
-        viewModel.selectAudioFile(UNIT_0_1);
+        viewModel.selectDrill(UNIT_0_1);
         viewModel.play();
 
         Objects.requireNonNull(stopCallback.get()).run();
@@ -133,8 +138,8 @@ class DrillViewModelTest {
         assertEquals(stoppedAt, savedPlayedAt.get());
     }
 
-    private static DrillViewModel newViewModel(List<AudioFile> files, AudioPlayer player) {
-        return new DrillViewModel(files, player, new NullDrillRepository(), Clock.systemUTC());
+    private static DrillViewModel newViewModel(List<Drill> drills, AudioPlayer player) {
+        return new DrillViewModel(drills, player, new NullDrillRepository(), Clock.systemUTC());
     }
 
     private static AudioPlayer recordingPlayer(AtomicReference<@Nullable Path> playedFile) {

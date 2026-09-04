@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
 
-import com.sosuisha.domain.model.AudioFile;
+import com.sosuisha.domain.model.Drill;
 import com.sosuisha.presentation.View;
 
 import atlantafx.base.theme.Styles;
@@ -56,15 +56,15 @@ public class DrillView implements View {
             .withRoot(
                 HBoxBuilder
                     .withChildren(
-                        ListViewBuilder.<AudioFile>create()
-                            .id("audioFiles")
-                            .items(viewModel.getAudioFiles())
+                        ListViewBuilder.<Drill>create()
+                            .id("drills")
+                            .items(viewModel.getDrills())
                             .cellFactory(_ -> fileNameCell())
                             .hGrowInHBox(Priority.ALWAYS)
                             .apply(
                                 listView -> listView.getSelectionModel()
                                     .selectedItemProperty()
-                                    .subscribe(viewModel::selectAudioFile)
+                                    .subscribe(viewModel::selectDrill)
                             )
                             .build(),
                         VBoxBuilder
@@ -104,10 +104,10 @@ public class DrillView implements View {
             .build();
     }
 
-    private static ListCell<AudioFile> fileNameCell() {
+    private static ListCell<Drill> fileNameCell() {
         return new ListCell<>() {
             @Override
-            protected void updateItem(@Nullable AudioFile item, boolean empty) {
+            protected void updateItem(@Nullable Drill item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(item == null || empty ? null : item.fileName());
             }

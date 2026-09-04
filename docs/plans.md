@@ -8,11 +8,15 @@ TDDの作業用todo。使い捨て。
 - [x] 音声ファイルの指紋（内容全体のSHA-256、小文字16進）を計算する
 - [x] 最終再生日時がSQLiteに記録される
 - [x] 走査時に各ファイルへ指紋を付与する（FileSystemAudioFolderScanner が AudioFile を返す）
+- [x] DBファイルの場所をシステムプロパティ edh.drill.db で上書きできる（既定は ~/.english-drill-helper/drill.db）。AppTest は @TempDir の DB を使う
+- [x] 一覧の組み立て（走査＋記録の照合）を DrillLoader に移し、DrillViewModel は List<Drill> を受け取るだけにする
 - [ ] リストに最終再生日時が記録される
+- [ ] 停止すると、一覧のその行の最終再生日時が更新される（replaceDrill はテストなしで書いた実装。テストで裏付ける）
+- [ ] 同じドリルを2回続けて停止しても、2回目も行が更新される（行の検索をオブジェクト同一性ではなく指紋で行う）
+- [ ] lastPlayedAtProperty() は行に日時が付いたため役割が重なる。表示の実装が固まったら削除を検討
 
 ### 気づき（Greenの過程で見つけたもの。テストリストに入れるかはユーザーが判断）
 
-- App の DB パスが ~/.english-drill-helper/drill.db にベタ書き。AppTest が実際のユーザーホームに DB を作ってしまう。ADR-002 のとおり edh.drill.db で上書きできるようにし、AppTest は @TempDir を指すようにする
 - 起動時に253ファイル（約530MB）を同期でハッシュしている。体感で遅ければ Task でバックグラウンド化する
 
 # 例外処理
