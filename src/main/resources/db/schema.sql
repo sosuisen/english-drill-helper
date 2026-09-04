@@ -1,0 +1,9 @@
+-- Schema of the drill database (~/.english-drill-helper/drill.db).
+-- Used both by the jOOQ code generator (parsed with H2) and at runtime
+-- to create the tables in SQLite, so keep it portable between the two.
+-- The primary key is the SHA-256 of the audio file content in lower-case
+-- hex (see ADR 002). Times are epoch milliseconds in UTC.
+CREATE TABLE IF NOT EXISTS drill (
+  fingerprint VARCHAR NOT NULL PRIMARY KEY,
+  last_played_at BIGINT NOT NULL
+);
