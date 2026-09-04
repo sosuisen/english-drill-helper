@@ -1,17 +1,22 @@
 package com.sosuisha.main;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Objects;
 
+import com.sosuisha.domain.exception.AudioFolderScanException;
 import com.sosuisha.domain.exception.UnrecoverableException;
+import com.sosuisha.domain.model.AudioFile;
 import com.sosuisha.presentation.View;
 import com.sosuisha.presentation.WindowManager;
 import com.sosuisha.presentation.screens.alert.AlertDialog;
 import com.sosuisha.presentation.screens.drill.DrillView;
 import com.sosuisha.presentation.screens.drill.DrillViewModel;
 import com.sosuisha.service.FileSystemAudioFolderScanner;
+import com.sosuisha.repository.SqliteDrillRepository;
 import com.sosuisha.service.MediaAudioPlayer;
+import com.sosuisha.service.Sha256Fingerprinter;
 
 import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
@@ -25,6 +30,9 @@ public class App extends Application {
     static final Class<? extends View> FIRST_VIEW = DrillView.class;
     /** Fixed folder that holds the drill audio files. */
     static final Path AUDIO_FOLDER = Path.of("D:\\Dropbox\\英語のハノン_210407");
+    /** SQLite file that keeps the records of the drills. */
+    static final Path DRILL_DB =
+        Path.of(System.getProperty("user.home"), ".english-drill-helper", "drill.db");
 
     /**
      * Composition root that wires the dependencies and shows the first window.
@@ -45,10 +53,24 @@ public class App extends Application {
         });
         setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         var windowManager = new WindowManager();
-        var audioFiles = new FileSystemAudioFolderScanner().scan(AUDIO_FOLDER);
-        var drillViewModel =
-            new DrillViewModel(audioFiles, new MediaAudioPlayer(), Clock.systemUTC());
+        var fingerprinter = new Sha256Fingerprinter();
+        var audioFiles = new FileSystemAudioFolderScanner().scan(AUDIO_FOLDER)
+            .stream()
+            .map(path -> new AudioFile(path, fingerprintOf(fingerprinter, path)))
+            .toList();
+        var repository = new SqliteDrillRepository(DRILL_DB);
+        var drillViewModel = new DrillViewModel(
+            audioFiles, new MediaAudioPlayer(), repository, Clock.systemUTC()
+        );
         windowManager.registerView(new DrillView(drillViewModel));
         windowManager.showWindow(FIRST_VIEW, stage);
+    }
+
+    private static String fingerprintOf(Sha256Fingerprinter fingerprinter, Path path) {
+        try {
+            return fingerprinter.fingerprint(path);
+        } catch (IOException e) {
+            throw new AudioFolderScanException("Cannot read the audio file: " + path, e);
+        }
     }
 }

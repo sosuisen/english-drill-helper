@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.api.FxRobot;
 import org.testfx.framework.junit5.ApplicationExtension;
 
+import com.sosuisha.domain.repository.NullDrillRepository;
 import com.sosuisha.domain.service.NullAudioPlayer;
 import com.sosuisha.presentation.screens.drill.DrillView;
 import com.sosuisha.presentation.screens.drill.DrillViewModel;
@@ -28,7 +29,11 @@ class WindowManagerTest {
     void returns_registered_drill_view_by_its_class() {
         var windowManager = new WindowManager();
         var view =
-            new DrillView(new DrillViewModel(List.of(), new NullAudioPlayer(), Clock.systemUTC()));
+            new DrillView(
+                new DrillViewModel(
+                    List.of(), new NullAudioPlayer(), new NullDrillRepository(), Clock.systemUTC()
+                )
+            );
 
         windowManager.registerView(view);
 
@@ -48,7 +53,11 @@ class WindowManagerTest {
     void show_window_displays_the_drill_view_window_with_the_decorated_style(FxRobot robot) {
         var windowManager = new WindowManager();
         var view =
-            new DrillView(new DrillViewModel(List.of(), new NullAudioPlayer(), Clock.systemUTC()));
+            new DrillView(
+                new DrillViewModel(
+                    List.of(), new NullAudioPlayer(), new NullDrillRepository(), Clock.systemUTC()
+                )
+            );
         windowManager.registerView(view);
 
         robot.interact(() -> windowManager.showWindow(DrillView.class, new Stage()));

@@ -1,8 +1,10 @@
 package com.sosuisha.presentation.screens.drill;
 
-import java.nio.file.Path;
 import java.util.Objects;
 
+import org.jspecify.annotations.Nullable;
+
+import com.sosuisha.domain.model.AudioFile;
 import com.sosuisha.presentation.View;
 
 import atlantafx.base.theme.Styles;
@@ -14,6 +16,7 @@ import io.github.sosuisen.jfxbuilder.graphics.SceneBuilder;
 import io.github.sosuisen.jfxbuilder.graphics.VBoxBuilder;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.ListCell;
 import javafx.scene.layout.Priority;
 
 /**
@@ -53,9 +56,10 @@ public class DrillView implements View {
             .withRoot(
                 HBoxBuilder
                     .withChildren(
-                        ListViewBuilder.<Path>create()
+                        ListViewBuilder.<AudioFile>create()
                             .id("audioFiles")
                             .items(viewModel.getAudioFiles())
+                            .cellFactory(_ -> fileNameCell())
                             .hGrowInHBox(Priority.ALWAYS)
                             .apply(
                                 listView -> listView.getSelectionModel()
@@ -98,5 +102,15 @@ public class DrillView implements View {
             .width(WIDTH)
             .height(HEIGHT)
             .build();
+    }
+
+    private static ListCell<AudioFile> fileNameCell() {
+        return new ListCell<>() {
+            @Override
+            protected void updateItem(@Nullable AudioFile item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(item == null || empty ? null : item.fileName());
+            }
+        };
     }
 }

@@ -10,23 +10,29 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.api.FxRobot;
 import org.testfx.framework.junit5.ApplicationExtension;
 import org.testfx.framework.junit5.Start;
-import org.jspecify.annotations.Nullable;
 import org.testfx.matcher.control.LabeledMatchers;
 
+import com.sosuisha.domain.model.AudioFile;
+import com.sosuisha.domain.repository.NullDrillRepository;
 import com.sosuisha.domain.service.NullAudioPlayer;
-
 
 import javafx.scene.control.ListView;
 import javafx.stage.Stage;
 
 @ExtendWith(ApplicationExtension.class)
 class DrillViewTest {
+    private static final AudioFile UNIT_0_1 =
+        new AudioFile(Path.of("001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1");
+    private static final AudioFile UNIT_0_2 =
+        new AudioFile(Path.of("002_Unit 0.2.mp3"), "fingerprint-of-unit-0-2");
+
     private DrillViewModel viewModel;
     private final AtomicReference<@Nullable Path> playedFile = new AtomicReference<>();
     private final AtomicBoolean stopped = new AtomicBoolean(false);
@@ -45,8 +51,7 @@ class DrillViewTest {
             }
         };
         viewModel = new DrillViewModel(
-            List.of(Path.of("001_Unit 0.1.mp3"), Path.of("002_Unit 0.2.mp3")), player,
-            Clock.systemUTC()
+            List.of(UNIT_0_1, UNIT_0_2), player, new NullDrillRepository(), Clock.systemUTC()
         );
         var view = new DrillView(viewModel);
         stage.setScene(view.getScene());
@@ -58,7 +63,7 @@ class DrillViewTest {
     @DisplayName("画面に音声ファイルの一覧が表示される")
     void the_screen_shows_the_list_of_audio_files(FxRobot robot) {
         @SuppressWarnings("unchecked")
-        ListView<Path> listView = robot.lookup("#audioFiles").queryAs(ListView.class);
+        ListView<AudioFile> listView = robot.lookup("#audioFiles").queryAs(ListView.class);
 
         assertEquals(viewModel.getAudioFiles(), listView.getItems());
     }
@@ -80,7 +85,7 @@ class DrillViewTest {
 
         robot.clickOn("#play");
 
-        assertEquals(Path.of("001_Unit 0.1.mp3"), playedFile.get());
+        assertEquals(UNIT_0_1.path(), playedFile.get());
     }
 
     @Test
