@@ -3,6 +3,7 @@ package com.sosuisha.presentation.screens.drill;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.testfx.api.FxAssert.verifyThat;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -12,8 +13,8 @@ import org.testfx.api.FxRobot;
 import org.testfx.framework.junit5.ApplicationExtension;
 import org.testfx.framework.junit5.Start;
 import org.testfx.matcher.control.LabeledMatchers;
-import org.testfx.matcher.control.TextInputControlMatchers;
 
+import javafx.scene.control.ListView;
 import javafx.stage.Stage;
 
 @ExtendWith(ApplicationExtension.class)
@@ -22,7 +23,9 @@ class DrillViewTest {
 
     @Start
     void setup(Stage stage) {
-        viewModel = new DrillViewModel(List.of());
+        viewModel = new DrillViewModel(
+            List.of(Path.of("001_Unit 0.1.mp3"), Path.of("002_Unit 0.2.mp3"))
+        );
         var view = new DrillView(viewModel);
         stage.setScene(view.getScene());
         stage.setTitle(view.getTitle());
@@ -30,31 +33,21 @@ class DrillViewTest {
     }
 
     @Test
-    @DisplayName("画面に問題文が表示される")
-    void the_screen_shows_the_question() {
-        verifyThat("#question", LabeledMatchers.hasText(viewModel.questionProperty().get()));
+    @DisplayName("画面に音声ファイルの一覧が表示される")
+    void the_screen_shows_the_list_of_audio_files(FxRobot robot) {
+        @SuppressWarnings("unchecked")
+        ListView<Path> listView = robot.lookup("#audioFiles").queryAs(ListView.class);
+
+        assertEquals(viewModel.getAudioFiles(), listView.getItems());
     }
 
     @Test
-    @DisplayName("回答欄に入力してCheckボタンを押すと、フィードバックが表示される")
-    void typing_an_answer_and_clicking_check_shows_the_feedback(FxRobot robot) {
-        robot.clickOn("#answer").write("I have a pen.");
+    @DisplayName("リストのファイル名をクリックすると、選ばれたファイル名がラベルに表示される")
+    void clicking_a_file_name_in_the_list_shows_the_selected_file_name_in_the_label(
+        FxRobot robot) {
+        robot.clickOn("002_Unit 0.2.mp3");
 
-        robot.clickOn("#check");
-
-        assertEquals("You typed: I have a pen.", viewModel.feedbackProperty().get());
-        verifyThat("#feedback", LabeledMatchers.hasText("You typed: I have a pen."));
-    }
-
-    @Test
-    @DisplayName("Clearボタンを押すと、回答欄とフィードバックが空になる")
-    void clicking_clear_empties_the_answer_field_and_the_feedback(FxRobot robot) {
-        robot.clickOn("#answer").write("I have a pen.");
-        robot.clickOn("#check");
-
-        robot.clickOn("#clear");
-
-        verifyThat("#answer", TextInputControlMatchers.hasText(""));
-        verifyThat("#feedback", LabeledMatchers.hasText(""));
+        assertEquals("002_Unit 0.2.mp3", viewModel.selectedFileNameProperty().get());
+        verifyThat("#selectedFileName", LabeledMatchers.hasText("002_Unit 0.2.mp3"));
     }
 }

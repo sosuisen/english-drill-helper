@@ -3,29 +3,28 @@ package com.sosuisha.presentation.screens.drill;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
+import org.jspecify.annotations.Nullable;
+
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 /**
- * ViewModel for the drill screen. It holds the audio files of the drills,
- * the question shown to the user, the answer typed by the user, and the
- * feedback to the answer.
+ * ViewModel for the drill screen. It holds the audio files of the drills and
+ * the selected audio file.
  */
 public class DrillViewModel {
-    private static final String INITIAL_QUESTION = "Type any English sentence and press Check.";
-    private static final String EMPTY_ANSWER_FEEDBACK = "Please type an answer.";
-
-    private final ReadOnlyStringWrapper question = new ReadOnlyStringWrapper(INITIAL_QUESTION);
-    private final StringProperty answer = new SimpleStringProperty("");
-    private final ReadOnlyStringWrapper feedback = new ReadOnlyStringWrapper("");
     private final ObservableList<Path> audioFiles = FXCollections.observableArrayList();
     private final ObservableList<Path> readOnlyAudioFiles =
         FXCollections.unmodifiableObservableList(audioFiles);
+    private final ObjectProperty<Optional<Path>> selectedAudioFile =
+        new SimpleObjectProperty<>(Optional.empty());
+    private final ReadOnlyStringWrapper selectedFileName = new ReadOnlyStringWrapper();
 
     /**
      * Creates the view model.
@@ -36,6 +35,9 @@ public class DrillViewModel {
     public DrillViewModel(List<Path> audioFiles) {
         Objects.requireNonNull(audioFiles, "audioFiles must not be null");
         this.audioFiles.setAll(audioFiles);
+        selectedFileName.bind(
+            selectedAudioFile.map(file -> file.map(DrillViewModel::fileNameOf).orElse(""))
+        );
     }
 
     /**
@@ -49,52 +51,26 @@ public class DrillViewModel {
     }
 
     /**
-     * Returns the question shown to the user.
+     * Selects an audio file.
      *
-     * @return read-only string property of the question
+     * @param file audio file to select, or null to clear the selection
      */
-    public ReadOnlyStringProperty questionProperty() {
-        return question.getReadOnlyProperty();
+    public void selectAudioFile(@Nullable Path file) {
+        selectedAudioFile.set(Optional.ofNullable(file));
     }
 
     /**
-     * Returns the answer typed by the user. The initial value is an empty
-     * string.
+     * Returns the file name of the selected audio file. It is an empty string
+     * while no file is selected.
      *
-     * @return string property of the answer
+     * @return read-only string property of the selected file name
      */
-    public StringProperty answerProperty() {
-        return answer;
+    public ReadOnlyStringProperty selectedFileNameProperty() {
+        return selectedFileName.getReadOnlyProperty();
     }
 
-    /**
-     * Returns the feedback to the last checked answer. It is an empty string
-     * until the answer is checked.
-     *
-     * @return read-only string property of the feedback
-     */
-    public ReadOnlyStringProperty feedbackProperty() {
-        return feedback.getReadOnlyProperty();
-    }
-
-    /**
-     * Checks the current answer and updates the feedback. A blank answer gets
-     * a feedback that asks the user to type an answer.
-     */
-    public void check() {
-        var text = answer.get();
-        if (text == null || text.isBlank()) {
-            feedback.set(EMPTY_ANSWER_FEEDBACK);
-            return;
-        }
-        feedback.set("You typed: " + text.strip());
-    }
-
-    /**
-     * Clears the answer and the feedback.
-     */
-    public void clear() {
-        answer.set("");
-        feedback.set("");
+    private static String fileNameOf(Path file) {
+        var name = file.getFileName();
+        return name == null ? file.toString() : name.toString();
     }
 }

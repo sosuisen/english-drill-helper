@@ -1,18 +1,17 @@
 package com.sosuisha.presentation.screens.drill;
 
+import java.nio.file.Path;
 import java.util.Objects;
 
 import com.sosuisha.presentation.View;
 
-import atlantafx.base.theme.Styles;
-import io.github.sosuisen.jfxbuilder.controls.ButtonBuilder;
 import io.github.sosuisen.jfxbuilder.controls.LabelBuilder;
-import io.github.sosuisen.jfxbuilder.controls.TextFieldBuilder;
+import io.github.sosuisen.jfxbuilder.controls.ListViewBuilder;
 import io.github.sosuisen.jfxbuilder.graphics.HBoxBuilder;
 import io.github.sosuisen.jfxbuilder.graphics.SceneBuilder;
-import io.github.sosuisen.jfxbuilder.graphics.VBoxBuilder;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.layout.Priority;
 
 /**
  * View for the drill screen.
@@ -49,41 +48,23 @@ public class DrillView implements View {
     private Scene buildSceneGraph() {
         return SceneBuilder
             .withRoot(
-                VBoxBuilder
+                HBoxBuilder
                     .withChildren(
-                        LabelBuilder.create()
-                            .id("question")
-                            .textPropertyApply(text -> text.bind(viewModel.questionProperty()))
-                            .wrapText(true)
+                        ListViewBuilder.<Path>create()
+                            .id("audioFiles")
+                            .items(viewModel.getAudioFiles())
+                            .hGrowInHBox(Priority.ALWAYS)
+                            .apply(
+                                listView -> listView.getSelectionModel()
+                                    .selectedItemProperty()
+                                    .subscribe(viewModel::selectAudioFile)
+                            )
                             .build(),
-                        TextFieldBuilder.create()
-                            .id("answer")
-                            .promptText("Your answer")
+                        LabelBuilder.create()
+                            .id("selectedFileName")
                             .textPropertyApply(
-                                text -> text.bindBidirectional(viewModel.answerProperty())
+                                text -> text.bind(viewModel.selectedFileNameProperty())
                             )
-                            .build(),
-                        HBoxBuilder
-                            .withChildren(
-                                ButtonBuilder.create()
-                                    .id("check")
-                                    .text("Check")
-                                    .defaultButton(true)
-                                    .addStyleClass(Styles.ACCENT)
-                                    .onAction(_ -> viewModel.check())
-                                    .build(),
-                                ButtonBuilder.create()
-                                    .id("clear")
-                                    .text("Clear")
-                                    .onAction(_ -> viewModel.clear())
-                                    .build()
-                            )
-                            .spacing(10)
-                            .build(),
-                        LabelBuilder.create()
-                            .id("feedback")
-                            .textPropertyApply(text -> text.bind(viewModel.feedbackProperty()))
-                            .wrapText(true)
                             .build()
                     )
                     .spacing(10)
