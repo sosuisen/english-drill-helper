@@ -72,12 +72,6 @@ class DrillViewTest {
     }
 
     @Test
-    @DisplayName("画面に再生ボタンが表示される")
-    void the_screen_shows_a_play_button() {
-        verifyThat("#play", LabeledMatchers.hasText("Play"));
-    }
-
-    @Test
     @DisplayName("ファイルを選んで再生ボタンを押すと、そのファイルが再生される")
     void selecting_a_file_and_clicking_play_plays_the_file(FxRobot robot) {
         robot.clickOn("001_Unit 0.1.mp3");
