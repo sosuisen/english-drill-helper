@@ -124,11 +124,7 @@ public class UnitView implements View {
                                         .columnResizePolicy(
                                             TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS
                                         )
-                                        .apply(
-                                            table -> table.getSelectionModel()
-                                                .selectedItemProperty()
-                                                .subscribe(viewModel::selectUnit)
-                                        )
+                                        .apply(this::syncSelectedUnit)
                                         .build()
                                 ),
                                 card(
@@ -281,6 +277,24 @@ public class UnitView implements View {
             );
             listView.refresh();
         });
+    }
+
+    // The table and the view model agree on the selected unit. A null from the
+    // table is ignored: the table never deselects by a click, and it drops the
+    // selection when the selected row is replaced (the last played time is
+    // recorded on stop). The view model then selects the new row in the table.
+    private void syncSelectedUnit(TableView<Unit> table) {
+        var selection = table.getSelectionModel();
+        selection.selectedItemProperty().subscribe(unit -> {
+            if (unit != null) {
+                viewModel.selectUnit(unit);
+            }
+        });
+        viewModel.selectedUnitProperty().subscribe(selected -> selected.ifPresent(unit -> {
+            if (!unit.equals(selection.getSelectedItem())) {
+                selection.select(unit);
+            }
+        }));
     }
 
     private static int firstVisibleIndexOf(ListView<TurnRow> listView) {

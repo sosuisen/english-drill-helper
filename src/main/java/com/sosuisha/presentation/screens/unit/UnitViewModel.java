@@ -23,14 +23,12 @@ import com.sosuisha.domain.repository.UnitRepository;
 import com.sosuisha.domain.service.AudioPlayer;
 import com.sosuisha.domain.service.PlaybackListener;
 
-import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -48,8 +46,8 @@ public class UnitViewModel {
     private final ObservableList<Unit> units = FXCollections.observableArrayList();
     private final ObservableList<Unit> readOnlyUnits =
         FXCollections.unmodifiableObservableList(units);
-    private final ObjectProperty<Optional<Unit>> selectedUnit =
-        new SimpleObjectProperty<>(Optional.empty());
+    private final ReadOnlyObjectWrapper<Optional<Unit>> selectedUnit =
+        new ReadOnlyObjectWrapper<>(Optional.empty());
     private final ReadOnlyStringWrapper selectedUnitTitle = new ReadOnlyStringWrapper();
     private final ReadOnlyBooleanWrapper unitSelected = new ReadOnlyBooleanWrapper();
     private final ObservableList<Segment> segments = FXCollections.observableArrayList();
@@ -222,13 +220,20 @@ public class UnitViewModel {
     /**
      * Selects a unit and starts loading its segments in the background. The
      * playback of the unit selected before is stopped, and the segment list
-     * is emptied at once and filled when the loading is done.
+     * is emptied at once and filled when the loading is done. Selecting the
+     * unit that is already selected (as a new row of the list, for example
+     * with a new last played time) only takes the row: the playback and the
+     * segments stay.
      * When the loading fails, the exception is rethrown on the FX thread and
      * reaches the uncaught exception handler of the application.
      *
      * @param unit unit to select, or null to clear the selection
      */
     public void selectUnit(@Nullable Unit unit) {
+        if (unit != null && isSelected(unit)) {
+            selectedUnit.set(Optional.of(unit));
+            return;
+        }
         player.stop(); // the playback belongs to the unit that was selected
         selectedUnit.set(Optional.ofNullable(unit));
         segments.clear();
@@ -280,6 +285,16 @@ public class UnitViewModel {
      */
     public ReadOnlyStringProperty selectedUnitTitleProperty() {
         return selectedUnitTitle.getReadOnlyProperty();
+    }
+
+    /**
+     * Returns the selected unit, as the row of the unit list it was selected
+     * from. The row changes when the last played time is recorded.
+     *
+     * @return the selected unit, or empty if no unit is selected
+     */
+    public ReadOnlyObjectProperty<Optional<Unit>> selectedUnitProperty() {
+        return selectedUnit.getReadOnlyProperty();
     }
 
     /**

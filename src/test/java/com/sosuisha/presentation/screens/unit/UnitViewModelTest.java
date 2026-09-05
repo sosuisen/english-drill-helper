@@ -537,6 +537,29 @@ class UnitViewModelTest {
     }
 
     @Test
+    @DisplayName("再生中に、選択中と同じユニットの新しい行（最終再生日時が付いたもの）を選んでも、再生は止まらずターン行も残る")
+    void selecting_the_selected_unit_again_keeps_the_playback_and_the_turn_rows() {
+        var stopped = new AtomicBoolean(false);
+        var player = new NullAudioPlayer() {
+            @Override
+            public void stop() {
+                stopped.set(true);
+            }
+        };
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, player);
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.play();
+        stopped.set(false); // the first selection stops the player as well
+        var played = UNIT_1_1.withLastPlayedAt(Instant.parse("2026-09-05T10:00:00Z"));
+
+        viewModel.selectUnit(played);
+
+        assertFalse(stopped.get());
+        assertEquals(25, viewModel.getTurnRows().size());
+    }
+
+    @Test
     @DisplayName("再生中に別のユニットを選ぶと、再生が停止する")
     void selecting_another_unit_while_playing_stops_the_playback() {
         var stopped = new AtomicBoolean(false);

@@ -459,6 +459,29 @@ class UnitViewTest {
     }
 
     @Test
+    @DisplayName("再生を停止しても、選択中のユニット（見出しと一覧の選択）とターン行の一覧は残る。停止時刻の記録でユニット一覧の行が差し替わっても選択は外れない")
+    void stopping_keeps_the_selected_unit_and_its_turn_rows(FxRobot robot) {
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+        robot.clickOn("#play");
+        var listener = Objects.requireNonNull(playbackListener.get());
+        @SuppressWarnings("unchecked")
+        ListView<TurnRow> turns = robot.lookup("#turns").queryAs(ListView.class);
+        @SuppressWarnings("unchecked")
+        TableView<Unit> units = robot.lookup("#units").queryAs(TableView.class);
+
+        robot.clickOn("#stop");
+        robot.interact(listener::stopped); // the player reports the stop
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals(25, turns.getItems().size());
+        assertEquals("Unit 1.1", viewModel.selectedUnitTitleProperty().get());
+        assertEquals(
+            UNIT_1_1.audioFile(), units.getSelectionModel().getSelectedItem().audioFile()
+        );
+    }
+
+    @Test
     @DisplayName("停止ボタンを押すと、再生が停止する")
     void clicking_stop_stops_the_playback(FxRobot robot) {
         robot.clickOn("011_Unit 1.1.mp3");
