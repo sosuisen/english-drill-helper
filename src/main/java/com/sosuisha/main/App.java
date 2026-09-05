@@ -11,6 +11,11 @@ import com.sosuisha.presentation.screens.alert.AlertDialog;
 import com.sosuisha.presentation.screens.unit.UnitView;
 import com.sosuisha.presentation.screens.unit.UnitViewModel;
 import com.sosuisha.service.UnitLoader;
+import com.sosuisha.service.JavaSoundAudioDecoder;
+import com.sosuisha.service.SegmentLoader;
+import com.sosuisha.service.SilenceDetector;
+import com.sosuisha.repository.SqliteSegmentRepository;
+import com.sosuisha.domain.model.SilenceDetectionParameters;
 import com.sosuisha.service.FileSystemAudioFolderScanner;
 import com.sosuisha.repository.SqliteUnitRepository;
 import com.sosuisha.service.MediaAudioPlayer;
@@ -51,9 +56,15 @@ public class App extends Application {
         var repository = new SqliteUnitRepository();
         var scanner = new FileSystemAudioFolderScanner(new Sha256Fingerprinter());
         var units = new UnitLoader(scanner, repository).load(AUDIO_FOLDER);
+        var segmentLoader = new SegmentLoader(
+            new JavaSoundAudioDecoder(),
+            new SilenceDetector(SilenceDetectionParameters.DEFAULT),
+            new SqliteSegmentRepository()
+        );
         var unitViewModel =
             new UnitViewModel(
-                units, new MediaAudioPlayer(), repository, Clock.systemDefaultZone()
+                units, new MediaAudioPlayer(), repository, Clock.systemDefaultZone(),
+                segmentLoader::load, runnable -> Thread.ofVirtual().start(runnable)
             );
         windowManager.registerView(new UnitView(unitViewModel));
         windowManager.showWindow(FIRST_VIEW, stage);

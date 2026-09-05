@@ -5,27 +5,38 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.testfx.framework.junit5.ApplicationExtension;
+import org.testfx.util.WaitForAsyncUtils;
 
 import com.sosuisha.domain.model.AudioFile;
+import com.sosuisha.domain.model.Segment;
 import com.sosuisha.domain.model.Unit;
 import com.sosuisha.domain.repository.NullUnitRepository;
 import com.sosuisha.domain.service.AudioPlayer;
 import com.sosuisha.domain.service.NullAudioPlayer;
 
+@ExtendWith(ApplicationExtension.class) // Task needs the JavaFX toolkit
 class UnitViewModelTest {
+    private static final Function<AudioFile, List<Segment>> NO_SEGMENTS = _ -> List.of();
     private static final Unit UNIT_0_1 = new Unit(
         new AudioFile(Path.of("units", "001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1"),
         Optional.empty()
@@ -111,7 +122,7 @@ class UnitViewModelTest {
         var stoppedAt = Instant.parse("2026-09-05T10:00:00Z");
         var viewModel = new UnitViewModel(
             List.of(UNIT_0_1), stopCapturingPlayer(stopCallback), repository,
-            Clock.fixed(stoppedAt, ZoneOffset.UTC)
+            Clock.fixed(stoppedAt, ZoneOffset.UTC), NO_SEGMENTS, Runnable::run
         );
         viewModel.selectUnit(UNIT_0_1);
         viewModel.play();
@@ -128,7 +139,7 @@ class UnitViewModelTest {
         var played = UNIT_0_1.withLastPlayedAt(Instant.parse("2026-09-05T10:05:00Z"));
         var viewModel = new UnitViewModel(
             List.of(played), new NullAudioPlayer(), new NullUnitRepository(),
-            Clock.fixed(Instant.EPOCH, ZoneOffset.ofHours(9))
+            Clock.fixed(Instant.EPOCH, ZoneOffset.ofHours(9)), NO_SEGMENTS, Runnable::run
         );
 
         assertEquals("2026-09-05 19:05", viewModel.lastPlayedAtTextOf(played));
@@ -141,7 +152,8 @@ class UnitViewModelTest {
         var stoppedAt = Instant.parse("2026-09-05T10:00:00Z");
         var viewModel = new UnitViewModel(
             List.of(UNIT_0_1, UNIT_0_2), stopCapturingPlayer(stopCallback),
-            new NullUnitRepository(), Clock.fixed(stoppedAt, ZoneOffset.UTC)
+            new NullUnitRepository(), Clock.fixed(stoppedAt, ZoneOffset.UTC), NO_SEGMENTS,
+            Runnable::run
         );
         viewModel.selectUnit(UNIT_0_1);
         viewModel.play();
@@ -162,7 +174,7 @@ class UnitViewModelTest {
         var now = new AtomicReference<Instant>(firstStop);
         var viewModel = new UnitViewModel(
             List.of(UNIT_0_1), stopCapturingPlayer(stopCallback), new NullUnitRepository(),
-            settableClock(now)
+            settableClock(now), NO_SEGMENTS, Runnable::run
         );
         viewModel.selectUnit(UNIT_0_1);
         viewModel.play();
@@ -194,8 +206,100 @@ class UnitViewModelTest {
         };
     }
 
+    // セグメント読み込みのテスト。ローダーは指紋ごとの固定の対応表、Executor は同期実行または手動実行
+    private static final List<Segment> SEGMENTS_0_1 = List.of(
+        new Segment(Duration.ofMillis(1000), Segment.Kind.SOUND),
+        new Segment(Duration.ofMillis(3000), Segment.Kind.SILENCE)
+    );
+    private static final List<Segment> SEGMENTS_0_2 =
+        List.of(new Segment(Duration.ofMillis(2500), Segment.Kind.SOUND));
+    private static final Function<AudioFile, List<Segment>> SEGMENT_TABLE = audioFile -> Map.of(
+        UNIT_0_1.audioFile().fingerprint(), SEGMENTS_0_1,
+        UNIT_0_2.audioFile().fingerprint(), SEGMENTS_0_2
+    ).get(audioFile.fingerprint());
+
+    @Test
+    @DisplayName("ユニットを選ぶと、そのユニットのセグメントがローダーで読み込まれ、セグメント一覧に入る")
+    void selecting_a_unit_loads_its_segments_into_the_segment_list() {
+        var viewModel = newViewModel(List.of(UNIT_0_1, UNIT_0_2), SEGMENT_TABLE, Runnable::run);
+
+        viewModel.selectUnit(UNIT_0_1);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals(SEGMENTS_0_1, viewModel.getSegments());
+    }
+
+    @Test
+    @DisplayName("選択を外すと、セグメント一覧は空になる")
+    void clearing_the_selection_empties_the_segment_list() {
+        var viewModel = newViewModel(List.of(UNIT_0_1), SEGMENT_TABLE, Runnable::run);
+        viewModel.selectUnit(UNIT_0_1);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        viewModel.selectUnit(null);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals(List.of(), viewModel.getSegments());
+    }
+
+    @Test
+    @DisplayName("別のユニットを選ぶと、セグメント一覧は新しいユニットのものに置き換わり、前のものは残らない")
+    void selecting_another_unit_replaces_the_segment_list_with_its_segments() {
+        var viewModel = newViewModel(List.of(UNIT_0_1, UNIT_0_2), SEGMENT_TABLE, Runnable::run);
+        viewModel.selectUnit(UNIT_0_1);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        viewModel.selectUnit(UNIT_0_2);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals(SEGMENTS_0_2, viewModel.getSegments());
+    }
+
+    @Test
+    @DisplayName("セグメントの読み込みはExecutorに渡され、Executorが実行するまでセグメント一覧は空のままである")
+    void loading_is_handed_to_the_executor_and_the_list_stays_empty_until_it_runs() {
+        var queue = new ArrayDeque<Runnable>();
+        var viewModel = newViewModel(List.of(UNIT_0_1), SEGMENT_TABLE, queue::add);
+
+        viewModel.selectUnit(UNIT_0_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        var beforeRun = List.copyOf(viewModel.getSegments());
+        Objects.requireNonNull(queue.poll()).run();
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals(List.of(), beforeRun);
+        assertEquals(SEGMENTS_0_1, viewModel.getSegments());
+    }
+
+    @Test
+    @DisplayName("前に選んだユニットの読み込み結果が遅れて届いても、いま選んでいるユニットのセグメント一覧は上書きされない")
+    void a_late_result_of_a_previously_selected_unit_does_not_overwrite_the_current_list() {
+        var queue = new ArrayDeque<Runnable>();
+        var viewModel = newViewModel(List.of(UNIT_0_1, UNIT_0_2), SEGMENT_TABLE, queue::add);
+        viewModel.selectUnit(UNIT_0_1);
+        viewModel.selectUnit(UNIT_0_2);
+        var loadOf0_1 = Objects.requireNonNull(queue.poll());
+        var loadOf0_2 = Objects.requireNonNull(queue.poll());
+
+        loadOf0_2.run();
+        loadOf0_1.run();
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals(SEGMENTS_0_2, viewModel.getSegments());
+    }
+
+    private static UnitViewModel newViewModel(
+        List<Unit> units, Function<AudioFile, List<Segment>> segmentLoader, Executor executor) {
+        return new UnitViewModel(
+            units, new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC(),
+            segmentLoader, executor
+        );
+    }
+
     private static UnitViewModel newViewModel(List<Unit> units, AudioPlayer player) {
-        return new UnitViewModel(units, player, new NullUnitRepository(), Clock.systemUTC());
+        return new UnitViewModel(
+            units, player, new NullUnitRepository(), Clock.systemUTC(), NO_SEGMENTS, Runnable::run
+        );
     }
 
     private static AudioPlayer recordingPlayer(AtomicReference<@Nullable Path> playedFile) {

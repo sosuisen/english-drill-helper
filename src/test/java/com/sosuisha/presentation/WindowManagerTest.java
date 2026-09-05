@@ -31,7 +31,8 @@ class WindowManagerTest {
         var view =
             new UnitView(
                 new UnitViewModel(
-                    List.of(), new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC()
+                    List.of(), new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC(),
+                    _ -> List.of(), Runnable::run
                 )
             );
 
@@ -55,7 +56,8 @@ class WindowManagerTest {
         var view =
             new UnitView(
                 new UnitViewModel(
-                    List.of(), new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC()
+                    List.of(), new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC(),
+                    _ -> List.of(), Runnable::run
                 )
             );
         windowManager.registerView(view);

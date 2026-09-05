@@ -62,7 +62,7 @@ class UnitViewTest {
         };
         viewModel = new UnitViewModel(
             List.of(UNIT_0_1, UNIT_0_2, PLAYED_UNIT_0_3), player, new NullUnitRepository(),
-            Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)
+            Clock.fixed(Instant.EPOCH, ZoneOffset.UTC), _ -> List.of(), Runnable::run
         );
         var view = new UnitView(viewModel);
         stage.setScene(view.getScene());
