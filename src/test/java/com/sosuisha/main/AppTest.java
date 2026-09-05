@@ -57,12 +57,12 @@ class AppTest {
     }
 
     @Test
-    @DisplayName("起動時にAtlantaFXのPrimer Lightテーマが適用されている")
-    void the_atlantafx_primer_light_theme_is_applied_at_startup() {
+    @DisplayName("起動時にAtlantaFXのNord Lightテーマが適用されている")
+    void the_atlantafx_nord_light_theme_is_applied_at_startup() {
         var stylesheet = Application.getUserAgentStylesheet();
 
         assertNotNull(stylesheet);
-        assertTrue(stylesheet.endsWith("primer-light.css"));
+        assertTrue(stylesheet.endsWith("nord-light.css"));
     }
 
     @Test

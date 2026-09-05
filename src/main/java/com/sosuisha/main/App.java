@@ -22,7 +22,7 @@ import com.sosuisha.repository.SqliteUnitRepository;
 import com.sosuisha.service.MediaAudioPlayer;
 import com.sosuisha.service.Sha256Fingerprinter;
 
-import atlantafx.base.theme.PrimerLight;
+import atlantafx.base.theme.NordLight;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
@@ -52,7 +52,7 @@ public class App extends Application {
                 AlertDialog.showUnexpectedError(e);
             }
         });
-        setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
+        setUserAgentStylesheet(new NordLight().getUserAgentStylesheet());
         var windowManager = new WindowManager();
         var database = new SqliteDatabase(SqliteDatabase.resolveFile());
         var repository = new SqliteUnitRepository(database);
