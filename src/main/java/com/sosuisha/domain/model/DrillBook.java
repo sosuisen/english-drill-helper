@@ -30,8 +30,6 @@ public final class DrillBook {
     static final Duration SAME_LENGTH_MIN_TOLERANCE = Duration.ofMillis(100);
     /** A silence no longer than this inside a key sentence is a pause, not a turn boundary. */
     static final Duration PAUSE_MAX_SILENCE = Duration.ofMillis(1300);
-    /** In an introduction unit, a sound shorter than this is a cue. */
-    static final Duration CUE_MAX_DURATION = Duration.ofMillis(800);
 
     private static final int SEGMENTS_PER_TURN = 2;
     private static final int TURNS_PER_SET = 3;
@@ -278,18 +276,26 @@ public final class DrillBook {
 
     // --- introduction units ---
 
-    /** The title is drill 0; every short sound is a cue that starts the next drill. */
+    /**
+     * The title is drill 0. The sentences come in pairs of the same length;
+     * a sound that is not part of such a pair is a cue, which starts the
+     * next drill.
+     */
     private static List<Drill> introductionDrills(List<Candidate> turns) {
         var drills = new ArrayList<List<RoledCandidate>>();
         var current = new ArrayList<RoledCandidate>();
         current.add(new RoledCandidate(Turn.Role.SENTENCE, turns.getFirst()));
-        for (var turn : turns.subList(1, turns.size())) {
-            if (turn.length().compareTo(CUE_MAX_DURATION) < 0) {
+        var i = 1;
+        while (i < turns.size()) {
+            if (i + 1 < turns.size() && turns.get(i).hasSameLengthAs(turns.get(i + 1))) {
+                current.add(new RoledCandidate(Turn.Role.SENTENCE, turns.get(i)));
+                current.add(new RoledCandidate(Turn.Role.SENTENCE, turns.get(i + 1)));
+                i += 2;
+            } else {
                 drills.add(current);
                 current = new ArrayList<>();
-                current.add(new RoledCandidate(Turn.Role.CUE, turn));
-            } else {
-                current.add(new RoledCandidate(Turn.Role.SENTENCE, turn));
+                current.add(new RoledCandidate(Turn.Role.CUE, turns.get(i)));
+                i += 1;
             }
         }
         drills.add(current);

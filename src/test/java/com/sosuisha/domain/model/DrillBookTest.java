@@ -177,6 +177,23 @@ class DrillBookTest {
     }
 
     @Test
+    @DisplayName("Unit 0.x: 文が短くても（0.72秒の対）、等しい長さの対は文であり Cue ではない。Cue は対に属さない有音（Unit 0.5）")
+    void short_sentence_pairs_of_an_introduction_unit_are_sentences_not_cues() {
+        var sounds = List.of(1.87, 0.46, 1.00, 1.00, 0.72, 0.72, 0.44, 1.66, 1.66, 1.25, 1.25);
+
+        var drills = DrillBook.drillsOf(sounds(sounds), INTRODUCTION_UNIT);
+
+        assertEquals(List.of(0, 1, 2), drills.stream().map(Drill::number).toList());
+        assertEquals(
+            List.of(
+                Turn.Role.CUE, Turn.Role.SENTENCE, Turn.Role.SENTENCE, Turn.Role.SENTENCE,
+                Turn.Role.SENTENCE
+            ),
+            drills.get(1).turns().stream().map(Turn::role).toList()
+        );
+    }
+
+    @Test
     @DisplayName("Unit 0.x: ドリル数は検証しない。Cue が3つでも例外にならず3ドリルになる")
     void an_introduction_unit_may_have_any_number_of_drills() {
         var sounds = List.of(1.5, 0.4, 1.4, 1.4, 0.4, 1.4, 1.4, 0.4, 1.4, 1.4);
