@@ -1,6 +1,6 @@
 package com.sosuisha.repository;
 
-import static com.sosuisha.db.Tables.DRILL;
+import static com.sosuisha.db.Tables.UNIT;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -21,17 +21,17 @@ import org.jooq.impl.DSL;
 import org.jspecify.annotations.Nullable;
 
 import com.sosuisha.domain.exception.RepositoryException;
-import com.sosuisha.domain.repository.DrillRepository;
+import com.sosuisha.domain.repository.UnitRepository;
 
 /**
- * Drill database stored in a SQLite file, accessed through jOOQ.
+ * Database of the app, stored in a SQLite file, accessed through jOOQ.
  * <p>
  * I/O errors are reported as runtime exceptions, in line with jOOQ, which
  * wraps every {@code SQLException} in its unchecked {@code DataAccessException}.
  * This class translates both into {@link RepositoryException} so that
  * callers see one exception type and jOOQ types do not leak out.
  */
-public class SqliteDrillRepository implements DrillRepository {
+public class SqliteUnitRepository implements UnitRepository {
     /** Default SQLite file, in the user home. */
     public static final Path DEFAULT_FILE =
         Path.of(System.getProperty("user.home"), ".english-drill-helper", "drill.db");
@@ -60,7 +60,7 @@ public class SqliteDrillRepository implements DrillRepository {
      * @throws RepositoryException if the parent folder cannot be created or the
      *             database cannot be opened
      */
-    public SqliteDrillRepository() throws RepositoryException {
+    public SqliteUnitRepository() throws RepositoryException {
         this(resolveFile());
     }
 
@@ -73,7 +73,7 @@ public class SqliteDrillRepository implements DrillRepository {
      * @throws RepositoryException if the parent folder cannot be created or the
      *             database cannot be opened
      */
-    public SqliteDrillRepository(Path file) throws RepositoryException {
+    public SqliteUnitRepository(Path file) throws RepositoryException {
         Objects.requireNonNull(file, "file must not be null");
         createParentFolder(file);
         this.file = file;
@@ -88,22 +88,22 @@ public class SqliteDrillRepository implements DrillRepository {
             Files.createDirectories(parent);
         } catch (IOException e) {
             throw new RepositoryException(
-                "Could not create the folder for the drill database: " + parent, e
+                "Could not create the folder for the database: " + parent, e
             );
         }
     }
 
     private void createSchema() {
         runWithDsl(
-            "Could not initialize the drill database", dsl -> dsl.execute(loadSchemaSql())
+            "Could not initialize the database", dsl -> dsl.execute(loadSchemaSql())
         );
     }
 
     private static String loadSchemaSql() {
-        try (var in = SqliteDrillRepository.class.getResourceAsStream(SCHEMA_RESOURCE)) {
+        try (var in = SqliteUnitRepository.class.getResourceAsStream(SCHEMA_RESOURCE)) {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new RepositoryException("Could not read the schema of the drill database", e);
+            throw new RepositoryException("Could not read the schema of the database", e);
         }
     }
 
@@ -134,8 +134,8 @@ public class SqliteDrillRepository implements DrillRepository {
         throws RepositoryException {
         Objects.requireNonNull(fingerprint, "fingerprint must not be null");
         Objects.requireNonNull(playedAt, "playedAt must not be null");
-        runWithDsl("Could not write to the drill database", dsl -> {
-            var record = dsl.newRecord(DRILL);
+        runWithDsl("Could not write to the database", dsl -> {
+            var record = dsl.newRecord(UNIT);
             record.setFingerprint(fingerprint);
             record.setLastPlayedAt(playedAt.toEpochMilli());
             record.merge(); // upsert
@@ -152,10 +152,10 @@ public class SqliteDrillRepository implements DrillRepository {
     public Optional<Instant> findLastPlayedAt(String fingerprint) throws RepositoryException {
         Objects.requireNonNull(fingerprint, "fingerprint must not be null");
         return withDsl(
-            "Could not read the drill database",
-            dsl -> dsl.select(DRILL.LAST_PLAYED_AT)
-                .from(DRILL)
-                .where(DRILL.FINGERPRINT.eq(fingerprint))
+            "Could not read the database",
+            dsl -> dsl.select(UNIT.LAST_PLAYED_AT)
+                .from(UNIT)
+                .where(UNIT.FINGERPRINT.eq(fingerprint))
                 .fetchOptional(record -> Instant.ofEpochMilli(record.value1()))
         );
     }

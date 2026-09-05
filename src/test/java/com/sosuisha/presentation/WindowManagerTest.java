@@ -14,10 +14,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.api.FxRobot;
 import org.testfx.framework.junit5.ApplicationExtension;
 
-import com.sosuisha.domain.repository.NullDrillRepository;
+import com.sosuisha.domain.repository.NullUnitRepository;
 import com.sosuisha.domain.service.NullAudioPlayer;
-import com.sosuisha.presentation.screens.drill.DrillView;
-import com.sosuisha.presentation.screens.drill.DrillViewModel;
+import com.sosuisha.presentation.screens.unit.UnitView;
+import com.sosuisha.presentation.screens.unit.UnitViewModel;
 
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -25,19 +25,19 @@ import javafx.stage.StageStyle;
 @ExtendWith(ApplicationExtension.class)
 class WindowManagerTest {
     @Test
-    @DisplayName("登録したDrillViewをクラス指定で取得できる")
-    void returns_registered_drill_view_by_its_class() {
+    @DisplayName("登録したUnitViewをクラス指定で取得できる")
+    void returns_registered_unit_view_by_its_class() {
         var windowManager = new WindowManager();
         var view =
-            new DrillView(
-                new DrillViewModel(
-                    List.of(), new NullAudioPlayer(), new NullDrillRepository(), Clock.systemUTC()
+            new UnitView(
+                new UnitViewModel(
+                    List.of(), new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC()
                 )
             );
 
         windowManager.registerView(view);
 
-        assertSame(view, windowManager.getView(DrillView.class));
+        assertSame(view, windowManager.getView(UnitView.class));
     }
 
     @Test
@@ -45,22 +45,22 @@ class WindowManagerTest {
     void getting_an_unregistered_view_throws_illegal_argument_exception() {
         var windowManager = new WindowManager();
 
-        assertThrows(IllegalArgumentException.class, () -> windowManager.getView(DrillView.class));
+        assertThrows(IllegalArgumentException.class, () -> windowManager.getView(UnitView.class));
     }
 
     @Test
-    @DisplayName("showWindowすると、DrillViewのウィンドウが通常のタイトルバー付き（DECORATED）で表示される")
-    void show_window_displays_the_drill_view_window_with_the_decorated_style(FxRobot robot) {
+    @DisplayName("showWindowすると、UnitViewのウィンドウが通常のタイトルバー付き（DECORATED）で表示される")
+    void show_window_displays_the_unit_view_window_with_the_decorated_style(FxRobot robot) {
         var windowManager = new WindowManager();
         var view =
-            new DrillView(
-                new DrillViewModel(
-                    List.of(), new NullAudioPlayer(), new NullDrillRepository(), Clock.systemUTC()
+            new UnitView(
+                new UnitViewModel(
+                    List.of(), new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC()
                 )
             );
         windowManager.registerView(view);
 
-        robot.interact(() -> windowManager.showWindow(DrillView.class, new Stage()));
+        robot.interact(() -> windowManager.showWindow(UnitView.class, new Stage()));
 
         var window = (Stage) robot.window("English Drill Helper");
         assertTrue(window.isShowing());

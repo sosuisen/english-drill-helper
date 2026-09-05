@@ -8,11 +8,11 @@ import com.sosuisha.domain.exception.UnrecoverableException;
 import com.sosuisha.presentation.View;
 import com.sosuisha.presentation.WindowManager;
 import com.sosuisha.presentation.screens.alert.AlertDialog;
-import com.sosuisha.presentation.screens.drill.DrillView;
-import com.sosuisha.presentation.screens.drill.DrillViewModel;
-import com.sosuisha.service.DrillLoader;
+import com.sosuisha.presentation.screens.unit.UnitView;
+import com.sosuisha.presentation.screens.unit.UnitViewModel;
+import com.sosuisha.service.UnitLoader;
 import com.sosuisha.service.FileSystemAudioFolderScanner;
-import com.sosuisha.repository.SqliteDrillRepository;
+import com.sosuisha.repository.SqliteUnitRepository;
 import com.sosuisha.service.MediaAudioPlayer;
 import com.sosuisha.service.Sha256Fingerprinter;
 
@@ -25,7 +25,7 @@ import javafx.stage.Stage;
  */
 public class App extends Application {
     /** Change this constant during development to open another window first. */
-    static final Class<? extends View> FIRST_VIEW = DrillView.class;
+    static final Class<? extends View> FIRST_VIEW = UnitView.class;
     /** Fixed folder that holds the drill audio files. */
     static final Path AUDIO_FOLDER = Path.of("D:\\Dropbox\\英語のハノン_210407");
 
@@ -48,14 +48,14 @@ public class App extends Application {
         });
         setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         var windowManager = new WindowManager();
-        var repository = new SqliteDrillRepository();
+        var repository = new SqliteUnitRepository();
         var scanner = new FileSystemAudioFolderScanner(new Sha256Fingerprinter());
-        var drills = new DrillLoader(scanner, repository).load(AUDIO_FOLDER);
-        var drillViewModel =
-            new DrillViewModel(
-                drills, new MediaAudioPlayer(), repository, Clock.systemDefaultZone()
+        var units = new UnitLoader(scanner, repository).load(AUDIO_FOLDER);
+        var unitViewModel =
+            new UnitViewModel(
+                units, new MediaAudioPlayer(), repository, Clock.systemDefaultZone()
             );
-        windowManager.registerView(new DrillView(drillViewModel));
+        windowManager.registerView(new UnitView(unitViewModel));
         windowManager.showWindow(FIRST_VIEW, stage);
     }
 }

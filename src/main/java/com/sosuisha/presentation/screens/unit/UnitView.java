@@ -1,10 +1,10 @@
-package com.sosuisha.presentation.screens.drill;
+package com.sosuisha.presentation.screens.unit;
 
 import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
 
-import com.sosuisha.domain.model.Drill;
+import com.sosuisha.domain.model.Unit;
 import com.sosuisha.presentation.View;
 
 import atlantafx.base.theme.Styles;
@@ -20,23 +20,23 @@ import javafx.scene.control.ListCell;
 import javafx.scene.layout.Priority;
 
 /**
- * View for the drill screen.
+ * View for the unit screen.
  */
-public class DrillView implements View {
+public class UnitView implements View {
     private static final String TITLE = "English Drill Helper";
     private static final double WIDTH = 480;
     private static final double HEIGHT = 240;
 
-    private final DrillViewModel viewModel;
+    private final UnitViewModel viewModel;
     private final Scene scene;
 
     /**
      * Creates the view.
      *
-     * @param viewModel view model of the drill screen
+     * @param viewModel view model of the unit screen
      * @throws NullPointerException if viewModel is null
      */
-    public DrillView(DrillViewModel viewModel) {
+    public UnitView(UnitViewModel viewModel) {
         this.viewModel = Objects.requireNonNull(viewModel, "viewModel must not be null");
         this.scene = buildSceneGraph();
     }
@@ -56,15 +56,15 @@ public class DrillView implements View {
             .withRoot(
                 HBoxBuilder
                     .withChildren(
-                        ListViewBuilder.<Drill>create()
-                            .id("drills")
-                            .items(viewModel.getDrills())
-                            .cellFactory(_ -> drillCell())
+                        ListViewBuilder.<Unit>create()
+                            .id("units")
+                            .items(viewModel.getUnits())
+                            .cellFactory(_ -> unitCell())
                             .hGrowInHBox(Priority.ALWAYS)
                             .apply(
                                 listView -> listView.getSelectionModel()
                                     .selectedItemProperty()
-                                    .subscribe(viewModel::selectDrill)
+                                    .subscribe(viewModel::selectUnit)
                             )
                             .build(),
                         VBoxBuilder
@@ -104,18 +104,18 @@ public class DrillView implements View {
             .build();
     }
 
-    private ListCell<Drill> drillCell() {
+    private ListCell<Unit> unitCell() {
         return new ListCell<>() {
             @Override
-            protected void updateItem(@Nullable Drill item, boolean empty) {
+            protected void updateItem(@Nullable Unit item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(item == null || empty ? null : cellTextOf(item));
             }
         };
     }
 
-    private String cellTextOf(Drill drill) {
-        var lastPlayedAt = viewModel.lastPlayedAtTextOf(drill);
-        return lastPlayedAt.isEmpty() ? drill.fileName() : drill.fileName() + "  " + lastPlayedAt;
+    private String cellTextOf(Unit unit) {
+        var lastPlayedAt = viewModel.lastPlayedAtTextOf(unit);
+        return lastPlayedAt.isEmpty() ? unit.fileName() : unit.fileName() + "  " + lastPlayedAt;
     }
 }

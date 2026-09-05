@@ -6,12 +6,12 @@ import java.util.Optional;
 import com.sosuisha.domain.exception.RepositoryException;
 
 /**
- * The drill database of the app. It keeps the records of each drill, keyed
+ * The database of the app. It keeps the records of each unit, keyed
  * by the fingerprint of the audio file (see ADR 002).
  */
-public interface DrillRepository {
+public interface UnitRepository {
     /**
-     * Saves the time when the drill was last played. An existing record of the
+     * Saves the time when the unit was last played. An existing record of the
      * same fingerprint is overwritten.
      *
      * @param fingerprint fingerprint of the audio file
@@ -21,10 +21,10 @@ public interface DrillRepository {
     void saveLastPlayedAt(String fingerprint, Instant playedAt) throws RepositoryException;
 
     /**
-     * Finds the time when the drill was last played.
+     * Finds the time when the unit was last played.
      *
      * @param fingerprint fingerprint of the audio file
-     * @return the time, or an empty Optional if the drill has never been played
+     * @return the time, or an empty Optional if the unit has never been played
      * @throws RepositoryException if the database cannot be read
      */
     Optional<Instant> findLastPlayedAt(String fingerprint) throws RepositoryException;

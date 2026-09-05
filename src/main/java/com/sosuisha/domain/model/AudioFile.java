@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * An audio file of a drill, identified by the fingerprint of its content
+ * An audio file of a unit, identified by the fingerprint of its content
  * (see ADR 002).
  *
  * @param path path of the audio file

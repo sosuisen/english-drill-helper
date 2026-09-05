@@ -1,4 +1,4 @@
-package com.sosuisha.presentation.screens.drill;
+package com.sosuisha.presentation.screens.unit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -20,47 +20,47 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.sosuisha.domain.model.AudioFile;
-import com.sosuisha.domain.model.Drill;
-import com.sosuisha.domain.repository.NullDrillRepository;
+import com.sosuisha.domain.model.Unit;
+import com.sosuisha.domain.repository.NullUnitRepository;
 import com.sosuisha.domain.service.AudioPlayer;
 import com.sosuisha.domain.service.NullAudioPlayer;
 
-class DrillViewModelTest {
-    private static final Drill UNIT_0_1 = new Drill(
-        new AudioFile(Path.of("drills", "001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1"),
+class UnitViewModelTest {
+    private static final Unit UNIT_0_1 = new Unit(
+        new AudioFile(Path.of("units", "001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1"),
         Optional.empty()
     );
-    private static final Drill UNIT_0_2 = new Drill(
-        new AudioFile(Path.of("drills", "002_Unit 0.2.mp3"), "fingerprint-of-unit-0-2"),
+    private static final Unit UNIT_0_2 = new Unit(
+        new AudioFile(Path.of("units", "002_Unit 0.2.mp3"), "fingerprint-of-unit-0-2"),
         Optional.empty()
     );
 
     @Test
-    @DisplayName("渡されたドリルの一覧を、渡された順序のまま保持する")
-    void holds_the_given_drills_in_the_given_order() {
-        var drills = List.of(UNIT_0_1, UNIT_0_2);
+    @DisplayName("渡されたユニットの一覧を、渡された順序のまま保持する")
+    void holds_the_given_units_in_the_given_order() {
+        var units = List.of(UNIT_0_1, UNIT_0_2);
 
-        var viewModel = newViewModel(drills, new NullAudioPlayer());
+        var viewModel = newViewModel(units, new NullAudioPlayer());
 
-        assertEquals(drills, viewModel.getDrills());
+        assertEquals(units, viewModel.getUnits());
     }
 
     @Test
-    @DisplayName("ドリルを選ぶと、そのファイル名が選択中のファイル名になる")
-    void selecting_a_drill_makes_its_file_name_the_selected_file_name() {
+    @DisplayName("ユニットを選ぶと、そのファイル名が選択中のファイル名になる")
+    void selecting_a_unit_makes_its_file_name_the_selected_file_name() {
         var viewModel = newViewModel(List.of(UNIT_0_1), new NullAudioPlayer());
 
-        viewModel.selectDrill(UNIT_0_1);
+        viewModel.selectUnit(UNIT_0_1);
 
         assertEquals("001_Unit 0.1.mp3", viewModel.selectedFileNameProperty().get());
     }
 
     @Test
-    @DisplayName("ドリルを選んで再生すると、その音声ファイルがプレイヤーで再生される")
-    void playing_with_a_selected_drill_plays_its_audio_file_with_the_player() {
+    @DisplayName("ユニットを選んで再生すると、その音声ファイルがプレイヤーで再生される")
+    void playing_with_a_selected_unit_plays_its_audio_file_with_the_player() {
         var playedFile = new AtomicReference<@Nullable Path>();
         var viewModel = newViewModel(List.of(UNIT_0_1), recordingPlayer(playedFile));
-        viewModel.selectDrill(UNIT_0_1);
+        viewModel.selectUnit(UNIT_0_1);
 
         viewModel.play();
 
@@ -68,8 +68,8 @@ class DrillViewModelTest {
     }
 
     @Test
-    @DisplayName("ドリルを選んでいない状態で再生しても、何も再生されない")
-    void playing_without_a_selected_drill_plays_nothing() {
+    @DisplayName("ユニットを選んでいない状態で再生しても、何も再生されない")
+    void playing_without_a_selected_unit_plays_nothing() {
         var playedFile = new AtomicReference<@Nullable Path>();
         var viewModel = newViewModel(List.of(UNIT_0_1), recordingPlayer(playedFile));
 
@@ -96,12 +96,12 @@ class DrillViewModelTest {
     }
 
     @Test
-    @DisplayName("再生が停止すると、選択中ドリルの指紋をキーに停止時刻がリポジトリへ保存される")
-    void when_the_playback_stops_the_stop_time_is_saved_by_the_fingerprint_of_the_selected_drill() {
+    @DisplayName("再生が停止すると、選択中ユニットの指紋をキーに停止時刻がリポジトリへ保存される")
+    void when_the_playback_stops_the_stop_time_is_saved_by_the_fingerprint_of_the_selected_unit() {
         var stopCallback = new AtomicReference<@Nullable Runnable>();
         var savedFingerprint = new AtomicReference<@Nullable String>();
         var savedPlayedAt = new AtomicReference<@Nullable Instant>();
-        var repository = new NullDrillRepository() {
+        var repository = new NullUnitRepository() {
             @Override
             public void saveLastPlayedAt(String fingerprint, Instant playedAt) {
                 savedFingerprint.set(fingerprint);
@@ -109,11 +109,11 @@ class DrillViewModelTest {
             }
         };
         var stoppedAt = Instant.parse("2026-09-05T10:00:00Z");
-        var viewModel = new DrillViewModel(
+        var viewModel = new UnitViewModel(
             List.of(UNIT_0_1), stopCapturingPlayer(stopCallback), repository,
             Clock.fixed(stoppedAt, ZoneOffset.UTC)
         );
-        viewModel.selectDrill(UNIT_0_1);
+        viewModel.selectUnit(UNIT_0_1);
         viewModel.play();
 
         Objects.requireNonNull(stopCallback.get()).run();
@@ -126,8 +126,8 @@ class DrillViewModelTest {
     @DisplayName("最終再生日時の表示文字は、Clockの時刻帯での「yyyy-MM-dd HH:mm」である")
     void the_text_of_the_last_played_at_is_yyyy_mm_dd_hh_mm_in_the_zone_of_the_clock() {
         var played = UNIT_0_1.withLastPlayedAt(Instant.parse("2026-09-05T10:05:00Z"));
-        var viewModel = new DrillViewModel(
-            List.of(played), new NullAudioPlayer(), new NullDrillRepository(),
+        var viewModel = new UnitViewModel(
+            List.of(played), new NullAudioPlayer(), new NullUnitRepository(),
             Clock.fixed(Instant.EPOCH, ZoneOffset.ofHours(9))
         );
 
@@ -135,36 +135,36 @@ class DrillViewModelTest {
     }
 
     @Test
-    @DisplayName("再生が停止すると、一覧のそのドリルの行の最終再生日時が停止時刻になる")
-    void when_the_playback_stops_the_row_of_the_drill_in_the_list_gets_the_stop_time() {
+    @DisplayName("再生が停止すると、一覧のそのユニットの行の最終再生日時が停止時刻になる")
+    void when_the_playback_stops_the_row_of_the_unit_in_the_list_gets_the_stop_time() {
         var stopCallback = new AtomicReference<@Nullable Runnable>();
         var stoppedAt = Instant.parse("2026-09-05T10:00:00Z");
-        var viewModel = new DrillViewModel(
+        var viewModel = new UnitViewModel(
             List.of(UNIT_0_1, UNIT_0_2), stopCapturingPlayer(stopCallback),
-            new NullDrillRepository(), Clock.fixed(stoppedAt, ZoneOffset.UTC)
+            new NullUnitRepository(), Clock.fixed(stoppedAt, ZoneOffset.UTC)
         );
-        viewModel.selectDrill(UNIT_0_1);
+        viewModel.selectUnit(UNIT_0_1);
         viewModel.play();
 
         Objects.requireNonNull(stopCallback.get()).run();
 
         assertEquals(
-            List.of(UNIT_0_1.withLastPlayedAt(stoppedAt), UNIT_0_2), viewModel.getDrills()
+            List.of(UNIT_0_1.withLastPlayedAt(stoppedAt), UNIT_0_2), viewModel.getUnits()
         );
     }
 
     @Test
-    @DisplayName("同じドリルを2回続けて停止すると、一覧のその行は2回目の停止時刻になる")
-    void stopping_the_same_drill_twice_gives_its_row_the_second_stop_time() {
+    @DisplayName("同じユニットを2回続けて停止すると、一覧のその行は2回目の停止時刻になる")
+    void stopping_the_same_unit_twice_gives_its_row_the_second_stop_time() {
         var stopCallback = new AtomicReference<@Nullable Runnable>();
         var firstStop = Instant.parse("2026-09-05T10:00:00Z");
         var secondStop = Instant.parse("2026-09-05T11:00:00Z");
         var now = new AtomicReference<Instant>(firstStop);
-        var viewModel = new DrillViewModel(
-            List.of(UNIT_0_1), stopCapturingPlayer(stopCallback), new NullDrillRepository(),
+        var viewModel = new UnitViewModel(
+            List.of(UNIT_0_1), stopCapturingPlayer(stopCallback), new NullUnitRepository(),
             settableClock(now)
         );
-        viewModel.selectDrill(UNIT_0_1);
+        viewModel.selectUnit(UNIT_0_1);
         viewModel.play();
         Objects.requireNonNull(stopCallback.get()).run();
         now.set(secondStop);
@@ -172,7 +172,7 @@ class DrillViewModelTest {
         viewModel.play();
         Objects.requireNonNull(stopCallback.get()).run();
 
-        assertEquals(Optional.of(secondStop), viewModel.getDrills().get(0).lastPlayedAt());
+        assertEquals(Optional.of(secondStop), viewModel.getUnits().get(0).lastPlayedAt());
     }
 
     private static Clock settableClock(AtomicReference<Instant> now) {
@@ -194,8 +194,8 @@ class DrillViewModelTest {
         };
     }
 
-    private static DrillViewModel newViewModel(List<Drill> drills, AudioPlayer player) {
-        return new DrillViewModel(drills, player, new NullDrillRepository(), Clock.systemUTC());
+    private static UnitViewModel newViewModel(List<Unit> units, AudioPlayer player) {
+        return new UnitViewModel(units, player, new NullUnitRepository(), Clock.systemUTC());
     }
 
     private static AudioPlayer recordingPlayer(AtomicReference<@Nullable Path> playedFile) {

@@ -5,18 +5,18 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A drill: an audio file together with its record.
+ * A unit: an audio file together with its record.
  *
- * @param audioFile audio file of the drill
- * @param lastPlayedAt time when the drill was last played, or empty if it has never been played
+ * @param audioFile audio file of the unit
+ * @param lastPlayedAt time when the unit was last played, or empty if it has never been played
  */
-public record Drill(AudioFile audioFile, Optional<Instant> lastPlayedAt) {
+public record Unit(AudioFile audioFile, Optional<Instant> lastPlayedAt) {
     /**
-     * Creates the drill.
+     * Creates the unit.
      *
      * @throws NullPointerException if audioFile or lastPlayedAt is null
      */
-    public Drill {
+    public Unit {
         Objects.requireNonNull(audioFile, "audioFile must not be null");
         Objects.requireNonNull(lastPlayedAt, "lastPlayedAt must not be null");
     }
@@ -31,14 +31,14 @@ public record Drill(AudioFile audioFile, Optional<Instant> lastPlayedAt) {
     }
 
     /**
-     * Returns a copy of this drill with the given last played time.
+     * Returns a copy of this unit with the given last played time.
      *
-     * @param playedAt time when the drill was last played
+     * @param playedAt time when the unit was last played
      * @return the copy
      * @throws NullPointerException if playedAt is null
      */
-    public Drill withLastPlayedAt(Instant playedAt) {
+    public Unit withLastPlayedAt(Instant playedAt) {
         Objects.requireNonNull(playedAt, "playedAt must not be null");
-        return new Drill(audioFile, Optional.of(playedAt));
+        return new Unit(audioFile, Optional.of(playedAt));
     }
 }

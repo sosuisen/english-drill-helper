@@ -15,7 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.framework.junit5.ApplicationExtension;
 import org.testfx.framework.junit5.Start;
 
-import com.sosuisha.presentation.screens.drill.DrillView;
+import com.sosuisha.presentation.screens.unit.UnitView;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -23,13 +23,13 @@ import javafx.stage.Stage;
 @ExtendWith(ApplicationExtension.class)
 class AppTest {
     private Stage stage;
-    private Path drillDb;
+    private Path unitDb;
 
     @Start
     void setup(Stage stage) throws Exception {
         var folder = Files.createTempDirectory("english-drill-helper-test");
-        drillDb = folder.resolve("drill.db");
-        System.setProperty("edh.drill.db", drillDb.toString());
+        unitDb = folder.resolve("drill.db");
+        System.setProperty("edh.drill.db", unitDb.toString());
         // The injected primary stage is reused across tests and rejects
         // initStyle, so App gets a fresh stage.
         this.stage = new Stage();
@@ -43,14 +43,14 @@ class AppTest {
 
     @Test
     @DisplayName("起動すると、edh.drill.dbで指定した場所にDBファイルが作られる")
-    void app_startup_creates_the_database_file_at_the_place_given_by_edh_drill_db() {
-        assertTrue(Files.exists(drillDb));
+    void app_startup_creates_the_database_file_at_the_place_given_by_edh_unit_db() {
+        assertTrue(Files.exists(unitDb));
     }
 
     @Test
     @DisplayName("アプリを起動すると、FIRST_VIEW定数で指定したViewのウィンドウが表示される")
     void app_startup_shows_the_window_of_the_view_specified_by_first_view_constant() {
-        var expectedTitles = Map.of(DrillView.class, "English Drill Helper");
+        var expectedTitles = Map.of(UnitView.class, "English Drill Helper");
 
         assertTrue(stage.isShowing());
         assertEquals(expectedTitles.get(App.FIRST_VIEW), stage.getTitle());

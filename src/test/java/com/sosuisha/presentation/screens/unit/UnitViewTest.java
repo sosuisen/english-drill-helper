@@ -1,4 +1,4 @@
-package com.sosuisha.presentation.screens.drill;
+package com.sosuisha.presentation.screens.unit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,27 +23,27 @@ import org.testfx.framework.junit5.Start;
 import org.testfx.matcher.control.LabeledMatchers;
 
 import com.sosuisha.domain.model.AudioFile;
-import com.sosuisha.domain.model.Drill;
-import com.sosuisha.domain.repository.NullDrillRepository;
+import com.sosuisha.domain.model.Unit;
+import com.sosuisha.domain.repository.NullUnitRepository;
 import com.sosuisha.domain.service.NullAudioPlayer;
 
 import javafx.scene.control.ListView;
 import javafx.stage.Stage;
 
 @ExtendWith(ApplicationExtension.class)
-class DrillViewTest {
-    private static final Drill UNIT_0_1 = new Drill(
+class UnitViewTest {
+    private static final Unit UNIT_0_1 = new Unit(
         new AudioFile(Path.of("001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1"), Optional.empty()
     );
-    private static final Drill UNIT_0_2 = new Drill(
+    private static final Unit UNIT_0_2 = new Unit(
         new AudioFile(Path.of("002_Unit 0.2.mp3"), "fingerprint-of-unit-0-2"), Optional.empty()
     );
-    private static final Drill PLAYED_UNIT_0_3 = new Drill(
+    private static final Unit PLAYED_UNIT_0_3 = new Unit(
         new AudioFile(Path.of("003_Unit 0.3.mp3"), "fingerprint-of-unit-0-3"),
         Optional.of(Instant.parse("2026-09-05T10:00:00Z"))
     );
 
-    private DrillViewModel viewModel;
+    private UnitViewModel viewModel;
     private final AtomicReference<@Nullable Path> playedFile = new AtomicReference<>();
     private final AtomicBoolean stopped = new AtomicBoolean(false);
 
@@ -60,11 +60,11 @@ class DrillViewTest {
                 stopped.set(true);
             }
         };
-        viewModel = new DrillViewModel(
-            List.of(UNIT_0_1, UNIT_0_2, PLAYED_UNIT_0_3), player, new NullDrillRepository(),
+        viewModel = new UnitViewModel(
+            List.of(UNIT_0_1, UNIT_0_2, PLAYED_UNIT_0_3), player, new NullUnitRepository(),
             Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)
         );
-        var view = new DrillView(viewModel);
+        var view = new UnitView(viewModel);
         stage.setScene(view.getScene());
         stage.setTitle(view.getTitle());
         stage.show();
@@ -74,14 +74,14 @@ class DrillViewTest {
     @DisplayName("画面に音声ファイルの一覧が表示される")
     void the_screen_shows_the_list_of_audio_files(FxRobot robot) {
         @SuppressWarnings("unchecked")
-        ListView<Drill> listView = robot.lookup("#drills").queryAs(ListView.class);
+        ListView<Unit> listView = robot.lookup("#units").queryAs(ListView.class);
 
-        assertEquals(viewModel.getDrills(), listView.getItems());
+        assertEquals(viewModel.getUnits(), listView.getItems());
     }
 
     @Test
-    @DisplayName("再生済みのドリルのセルには、ファイル名と最終再生日時が表示される")
-    void the_cell_of_a_played_drill_shows_the_file_name_and_the_last_played_at(FxRobot robot) {
+    @DisplayName("再生済みのユニットのセルには、ファイル名と最終再生日時が表示される")
+    void the_cell_of_a_played_unit_shows_the_file_name_and_the_last_played_at(FxRobot robot) {
         assertTrue(robot.lookup("003_Unit 0.3.mp3  2026-09-05 10:00").tryQuery().isPresent());
     }
 
