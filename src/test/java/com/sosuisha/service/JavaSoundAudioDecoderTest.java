@@ -1,6 +1,7 @@
 package com.sosuisha.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 
@@ -63,6 +64,20 @@ class JavaSoundAudioDecoderTest {
 
         assertEquals(SAMPLE_RATE, pcm.sampleRate());
         assertEquals(1, pcm.channels());
+    }
+
+    @Test
+    @DisplayName("mp3ファイルをデコードしたPCMはファイル全体を含む。サンプル数は10.5秒分か、エンコーダ遅延の分（0.1秒未満）だけ多い")
+    void decoding_an_mp3_file_gives_the_whole_file_with_at_most_the_encoder_delay_in_extra_samples()
+        throws Exception {
+        var pcm = new JavaSoundAudioDecoder().decode(MP3);
+
+        var expected = secondsToIndex(DURATION_SECONDS);
+        var actual = pcm.samples().length;
+        assertTrue(
+            actual >= expected && actual < expected + secondsToIndex(0.1),
+            "samples: " + actual + ", expected: " + expected
+        );
     }
 
     private static int secondsToIndex(double seconds) {
