@@ -1,6 +1,7 @@
 package com.sosuisha.domain.service;
 
 import java.nio.file.Path;
+import java.time.Duration;
 
 /**
  * Audio player that does nothing. Used by tests that do not care about
@@ -8,7 +9,7 @@ import java.nio.file.Path;
  */
 public class NullAudioPlayer implements AudioPlayer {
     @Override
-    public void play(Path file, Runnable onStopped) {
+    public void play(Path file, Duration start, PlaybackListener listener) {
         // does nothing
     }
 

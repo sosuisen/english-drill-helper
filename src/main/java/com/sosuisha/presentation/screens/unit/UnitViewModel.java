@@ -1,6 +1,7 @@
 package com.sosuisha.presentation.screens.unit;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
@@ -17,8 +18,11 @@ import com.sosuisha.domain.model.Segment;
 import com.sosuisha.domain.model.Unit;
 import com.sosuisha.domain.repository.UnitRepository;
 import com.sosuisha.domain.service.AudioPlayer;
+import com.sosuisha.domain.service.PlaybackListener;
 
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
@@ -51,6 +55,8 @@ public class UnitViewModel {
     private final ObservableList<TurnRow> turnRows = FXCollections.observableArrayList();
     private final ObservableList<TurnRow> readOnlyTurnRows =
         FXCollections.unmodifiableObservableList(turnRows);
+    private final ReadOnlyObjectWrapper<Optional<TurnRow>> playingTurnRow =
+        new ReadOnlyObjectWrapper<>(Optional.empty());
     private final AudioPlayer player;
     private final UnitRepository repository;
     private final Clock clock;
@@ -86,6 +92,31 @@ public class UnitViewModel {
             (ListChangeListener<Segment>) _ -> drills.setAll(drillsOfSelectedUnit())
         );
         drills.addListener((ListChangeListener<Drill>) _ -> turnRows.setAll(turnRowsOf(drills)));
+        turnRows
+            .addListener((ListChangeListener<TurnRow>) _ -> playingTurnRow.set(Optional.empty()));
+    }
+
+    /**
+     * Returns the row of the turn that is playing: the last turn that starts
+     * at or before the playback position. It is empty while nothing has
+     * played yet, while the position is before the first turn, and when the
+     * turn list changes.
+     *
+     * @return read-only property of the playing turn row
+     */
+    public ReadOnlyObjectProperty<Optional<TurnRow>> playingTurnRowProperty() {
+        return playingTurnRow.getReadOnlyProperty();
+    }
+
+    private Optional<TurnRow> turnRowAt(Duration position) {
+        Optional<TurnRow> playing = Optional.empty();
+        for (var row : turnRows) {
+            if (startOf(row).compareTo(position) > 0) {
+                break;
+            }
+            playing = Optional.of(row);
+        }
+        return playing;
     }
 
     /**
@@ -205,8 +236,39 @@ public class UnitViewModel {
      * unit.
      */
     public void play() {
-        selectedUnit.get()
-            .ifPresent(unit -> player.play(unit.audioFile().path(), () -> recordStop(unit)));
+        selectedUnit.get().ifPresent(unit -> playFrom(unit, Duration.ZERO));
+    }
+
+    /**
+     * Plays the selected unit from the beginning of the turn of the row to
+     * the end of the file, as the drill book means it. Does nothing while no
+     * unit is selected. When the playback stops, the time is recorded as the
+     * last played time of the unit.
+     *
+     * @param row row of the turn to start from
+     * @throws NullPointerException if row is null
+     */
+    public void playTurn(TurnRow row) {
+        Objects.requireNonNull(row, "row must not be null");
+        selectedUnit.get().ifPresent(unit -> playFrom(unit, startOf(row)));
+    }
+
+    private Duration startOf(TurnRow row) {
+        return segments.get(row.turn().firstSegmentIndex()).start();
+    }
+
+    private void playFrom(Unit unit, Duration start) {
+        player.play(unit.audioFile().path(), start, new PlaybackListener() {
+            @Override
+            public void positionChanged(Duration position) {
+                playingTurnRow.set(turnRowAt(position));
+            }
+
+            @Override
+            public void stopped() {
+                recordStop(unit);
+            }
+        });
     }
 
     /**

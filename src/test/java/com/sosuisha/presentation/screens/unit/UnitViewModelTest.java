@@ -36,6 +36,7 @@ import com.sosuisha.domain.model.Unit;
 import com.sosuisha.domain.repository.NullUnitRepository;
 import com.sosuisha.domain.service.AudioPlayer;
 import com.sosuisha.domain.service.NullAudioPlayer;
+import com.sosuisha.domain.service.PlaybackListener;
 
 @ExtendWith(ApplicationExtension.class) // Task needs the JavaFX toolkit
 class UnitViewModelTest {
@@ -328,8 +329,8 @@ class UnitViewModelTest {
     }
 
     @Test
-    @DisplayName("Unit 1.1 型（Key の対が冒頭に1組だけ）のユニットを選ぶと、ターン行は 1-1 [Key]、1-2 [Key]、1-3、1-4、1-5、2-1 … になる")
-    void turn_rows_of_a_unit_with_one_key_pair_start_with_the_key_pair_in_drill_one() {
+    @DisplayName("Unit 1.1 型（Key の対が冒頭に1組だけ）のユニットを選ぶと、Key の対はドリル0になり、ターン行は 0-1 [Key]、0-2 [Key]、1-1、1-2、1-3、2-1 … になる")
+    void turn_rows_of_a_unit_with_one_key_pair_start_with_the_key_pair_as_drill_zero() {
         Function<AudioFile, List<Segment>> oneKeyPair = _ -> unitWithOneKeyPair();
         var viewModel = newViewModel(List.of(UNIT_1_1), oneKeyPair, Runnable::run);
 
@@ -339,7 +340,7 @@ class UnitViewModelTest {
         var labels = viewModel.getTurnRows().stream().map(TurnRow::label).toList();
         assertEquals(17, labels.size());
         assertEquals(
-            List.of("1-1 [Key]", "1-2 [Key]", "1-3", "1-4", "1-5", "2-1", "2-2", "2-3"),
+            List.of("0-1 [Key]", "0-2 [Key]", "1-1", "1-2", "1-3", "2-1", "2-2", "2-3"),
             labels.subList(0, 8)
         );
     }
@@ -374,6 +375,163 @@ class UnitViewModelTest {
         assertEquals(11, labels.size());
         assertEquals(List.of("0-1", "1-1", "1-2"), labels.subList(0, 3));
         assertEquals("2-5", labels.getLast());
+    }
+
+    @Test
+    @DisplayName("ターン行を指定して再生すると、選択中ユニットの音声ファイルが、そのターンの最初のセグメントの開始位置から再生される")
+    void playing_a_turn_row_plays_the_file_of_the_selected_unit_from_the_start_of_its_first_segment() {
+        var played = new AtomicReference<@Nullable Playback>();
+        var viewModel = newViewModel(
+            List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, playbackRecordingPlayer(played)
+        );
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        var cueOfDrill1 = viewModel.getTurnRows().get(2); // 1-3, the cue after the key pair
+
+        viewModel.playTurn(cueOfDrill1);
+
+        var playback = Objects.requireNonNull(played.get());
+        assertEquals(UNIT_1_1.audioFile().path(), playback.file());
+        assertEquals(SEGMENTS_1_1.get(4).start(), playback.start());
+    }
+
+    @Test
+    @DisplayName("ターンから再生して停止したときも、選択中ユニットの最終再生日時が記録される")
+    void stopping_a_playback_started_from_a_turn_records_the_last_played_time_too() {
+        var stopCallback = new AtomicReference<@Nullable Runnable>();
+        var savedFingerprint = new AtomicReference<@Nullable String>();
+        var repository = new NullUnitRepository() {
+            @Override
+            public void saveLastPlayedAt(String fingerprint, Instant playedAt) {
+                savedFingerprint.set(fingerprint);
+            }
+        };
+        var viewModel = new UnitViewModel(
+            List.of(UNIT_1_1), stopCapturingPlayer(stopCallback), repository, Clock.systemUTC(),
+            SEGMENT_TABLE, Runnable::run
+        );
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.playTurn(viewModel.getTurnRows().get(2));
+
+        Objects.requireNonNull(stopCallback.get()).run();
+
+        assertEquals("fingerprint-of-unit-1-1", savedFingerprint.get());
+    }
+
+    @Test
+    @DisplayName("Play ボタンの再生は、従来どおりファイルの先頭（0秒）から再生される")
+    void playing_with_the_play_button_starts_from_the_beginning_of_the_file() {
+        var played = new AtomicReference<@Nullable Playback>();
+        var viewModel = newViewModel(
+            List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, playbackRecordingPlayer(played)
+        );
+        viewModel.selectUnit(UNIT_1_1);
+
+        viewModel.play();
+
+        assertEquals(Duration.ZERO, Objects.requireNonNull(played.get()).start());
+    }
+
+    @Test
+    @DisplayName("再生位置が通知されると、その位置を含むターン（最初のセグメントの開始位置が再生位置以下である最後のターン）が再生中のターン行になる")
+    void the_playing_turn_row_is_the_last_turn_that_starts_at_or_before_the_position() {
+        var listener = new AtomicReference<@Nullable PlaybackListener>();
+        var viewModel = newViewModel(
+            List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, listenerCapturingPlayer(listener)
+        );
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.play();
+
+        // 1-3 (the cue) starts at 10 s and 1-4 (the first answer) at 12.6 s
+        Objects.requireNonNull(listener.get()).positionChanged(Duration.ofMillis(11_000));
+
+        assertEquals(
+            Optional.of(viewModel.getTurnRows().get(2)), viewModel.playingTurnRowProperty().get()
+        );
+    }
+
+    @Test
+    @DisplayName("再生位置がどのターンの開始位置より前（冒頭の無音）のときは、再生中のターン行は空である")
+    void the_playing_turn_row_is_empty_before_the_first_turn() {
+        var listener = new AtomicReference<@Nullable PlaybackListener>();
+        Function<AudioFile, List<Segment>> withLeadIn = _ -> withLeadingSilence(SEGMENTS_1_1);
+        var viewModel = newViewModel(
+            List.of(UNIT_1_1), withLeadIn, Runnable::run, listenerCapturingPlayer(listener)
+        );
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.play();
+
+        Objects.requireNonNull(listener.get()).positionChanged(Duration.ofMillis(300));
+
+        assertEquals(Optional.empty(), viewModel.playingTurnRowProperty().get());
+    }
+
+    @Test
+    @DisplayName("選択を外してターン一覧が空になると、再生中のターン行も空になる")
+    void the_playing_turn_row_empties_with_the_turn_rows() {
+        var listener = new AtomicReference<@Nullable PlaybackListener>();
+        var viewModel = newViewModel(
+            List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, listenerCapturingPlayer(listener)
+        );
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.play();
+        Objects.requireNonNull(listener.get()).positionChanged(Duration.ofMillis(11_000));
+
+        viewModel.selectUnit(null);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals(Optional.empty(), viewModel.playingTurnRowProperty().get());
+    }
+
+    private static AudioPlayer listenerCapturingPlayer(
+        AtomicReference<@Nullable PlaybackListener> captured) {
+        return new NullAudioPlayer() {
+            @Override
+            public void play(Path file, Duration start, PlaybackListener listener) {
+                captured.set(listener);
+            }
+        };
+    }
+
+    /** The segments with one second of silence put before them, renumbered from zero. */
+    private static List<Segment> withLeadingSilence(List<Segment> segments) {
+        var leadIn = Duration.ofSeconds(1);
+        var result = new ArrayList<Segment>();
+        result.add(new Segment(0, Duration.ZERO, leadIn, Segment.Kind.SILENCE));
+        for (var segment : segments) {
+            result.add(
+                new Segment(
+                    segment.index() + 1, segment.start().plus(leadIn), segment.duration(),
+                    segment.kind()
+                )
+            );
+        }
+        return result;
+    }
+
+    /** What a player was asked to play: the file and the start position. */
+    private record Playback(Path file, Duration start) {
+    }
+
+    private static AudioPlayer playbackRecordingPlayer(AtomicReference<@Nullable Playback> played) {
+        return new NullAudioPlayer() {
+            @Override
+            public void play(Path file, Duration start, PlaybackListener listener) {
+                played.set(new Playback(file, start));
+            }
+        };
+    }
+
+    private static UnitViewModel newViewModel(
+        List<Unit> units, Function<AudioFile, List<Segment>> segmentLoader, Executor executor,
+        AudioPlayer player) {
+        return new UnitViewModel(
+            units, player, new NullUnitRepository(), Clock.systemUTC(), segmentLoader, executor
+        );
     }
 
     /**
@@ -437,7 +595,7 @@ class UnitViewModelTest {
     private static AudioPlayer recordingPlayer(AtomicReference<@Nullable Path> playedFile) {
         return new NullAudioPlayer() {
             @Override
-            public void play(Path file, Runnable onStopped) {
+            public void play(Path file, Duration start, PlaybackListener listener) {
                 playedFile.set(file);
             }
         };
@@ -447,8 +605,8 @@ class UnitViewModelTest {
         AtomicReference<@Nullable Runnable> stopCallback) {
         return new NullAudioPlayer() {
             @Override
-            public void play(Path file, Runnable onStopped) {
-                stopCallback.set(onStopped);
+            public void play(Path file, Duration start, PlaybackListener listener) {
+                stopCallback.set(listener::stopped);
             }
         };
     }

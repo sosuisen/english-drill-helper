@@ -11,8 +11,10 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jspecify.annotations.Nullable;
@@ -30,6 +32,7 @@ import com.sosuisha.domain.model.Segment;
 import com.sosuisha.domain.model.Unit;
 import com.sosuisha.domain.repository.NullUnitRepository;
 import com.sosuisha.domain.service.NullAudioPlayer;
+import com.sosuisha.domain.service.PlaybackListener;
 
 import javafx.scene.control.ListView;
 import javafx.stage.Stage;
@@ -49,14 +52,21 @@ class UnitViewTest {
 
     private UnitViewModel viewModel;
     private final AtomicReference<@Nullable Path> playedFile = new AtomicReference<>();
+    private final AtomicReference<@Nullable Duration> playedStart = new AtomicReference<>();
+    private final AtomicReference<@Nullable PlaybackListener> playbackListener =
+        new AtomicReference<>();
+    private final AtomicInteger playCount = new AtomicInteger();
     private final AtomicBoolean stopped = new AtomicBoolean(false);
 
     @Start
     void setup(Stage stage) {
         var player = new NullAudioPlayer() {
             @Override
-            public void play(Path file, Runnable onStopped) {
+            public void play(Path file, Duration start, PlaybackListener listener) {
                 playedFile.set(file);
+                playedStart.set(start);
+                playbackListener.set(listener);
+                playCount.incrementAndGet();
             }
 
             @Override
@@ -127,6 +137,36 @@ class UnitViewTest {
 
         assertTrue(robot.lookup("1-1 [Key]").tryQuery().isPresent());
         assertTrue(robot.lookup("1-3").tryQuery().isPresent());
+    }
+
+    @Test
+    @DisplayName("ターン行をクリックすると、その行のターンの開始位置から再生される")
+    void clicking_a_turn_row_plays_from_the_start_of_its_turn(FxRobot robot) {
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+
+        robot.clickOn("1-3");
+
+        assertEquals(UNIT_1_1.audioFile().path(), playedFile.get());
+        assertEquals(Duration.ofSeconds(10), playedStart.get()); // 3.0 + 2 + 3.0 + 2
+    }
+
+    @Test
+    @DisplayName("再生中のターン行が変わると、ターン一覧の選択行がそれに追従する。この選択変更では再生は始まらない")
+    void the_selected_turn_row_follows_the_playing_turn_without_starting_a_playback(
+        FxRobot robot) {
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+        robot.clickOn("#play");
+        var listener = Objects.requireNonNull(playbackListener.get());
+
+        robot.interact(() -> listener.positionChanged(Duration.ofSeconds(11))); // inside 1-3
+        WaitForAsyncUtils.waitForFxEvents();
+
+        @SuppressWarnings("unchecked")
+        ListView<TurnRow> listView = robot.lookup("#turns").queryAs(ListView.class);
+        assertEquals("1-3", listView.getSelectionModel().getSelectedItem().label());
+        assertEquals(1, playCount.get());
     }
 
     @Test

@@ -17,6 +17,7 @@ import io.github.sosuisen.jfxbuilder.graphics.VBoxBuilder;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.Priority;
 
 /**
@@ -96,6 +97,7 @@ public class UnitView implements View {
                                     .items(viewModel.getTurnRows())
                                     .cellFactory(_ -> turnCell())
                                     .vGrowInVBox(Priority.ALWAYS)
+                                    .apply(listView -> followPlayingTurn(listView))
                                     .build()
                             )
                             .spacing(10)
@@ -110,14 +112,31 @@ public class UnitView implements View {
             .build();
     }
 
-    private static ListCell<TurnRow> turnCell() {
-        return new ListCell<>() {
+    // The selected row follows the playing turn; selecting a row never plays it.
+    private void followPlayingTurn(ListView<TurnRow> listView) {
+        viewModel.playingTurnRowProperty().subscribe(
+            row -> row.ifPresentOrElse(
+                listView.getSelectionModel()::select, listView.getSelectionModel()::clearSelection
+            )
+        );
+    }
+
+    // A click on a row plays its turn. Selection changes do not, because the
+    // selection also follows the playback position.
+    private ListCell<TurnRow> turnCell() {
+        var cell = new ListCell<TurnRow>() {
             @Override
             protected void updateItem(@Nullable TurnRow item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(item == null || empty ? null : item.label());
             }
         };
+        cell.setOnMouseClicked(_ -> {
+            if (!cell.isEmpty()) {
+                viewModel.playTurn(cell.getItem());
+            }
+        });
+        return cell;
     }
 
     private ListCell<Unit> unitCell() {
