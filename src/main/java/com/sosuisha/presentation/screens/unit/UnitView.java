@@ -18,6 +18,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.layout.Priority;
 
 /**
@@ -27,6 +28,8 @@ public class UnitView implements View {
     private static final String TITLE = "English Drill Helper";
     private static final double WIDTH = 480;
     private static final double HEIGHT = 640;
+    private static final String DRILL_START_CLASS = "drill-start";
+    private static final String CUE_CLASS = "cue";
 
     private final UnitViewModel viewModel;
     private final Scene scene;
@@ -59,6 +62,8 @@ public class UnitView implements View {
                     .withChildren(
                         ListViewBuilder.<Unit>create()
                             .id("units")
+                            .addStyleClass(Styles.DENSE)
+                            .addStyleClass(Styles.STRIPED)
                             .items(viewModel.getUnits())
                             .cellFactory(_ -> unitCell())
                             .hGrowInHBox(Priority.ALWAYS)
@@ -94,6 +99,8 @@ public class UnitView implements View {
                                     .build(),
                                 ListViewBuilder.<TurnRow>create()
                                     .id("turns")
+                                    .addStyleClass(Styles.DENSE)
+                                    .addStyleClass(Styles.STRIPED)
                                     .items(viewModel.getTurnRows())
                                     .cellFactory(_ -> turnCell())
                                     .vGrowInVBox(Priority.ALWAYS)
@@ -112,13 +119,42 @@ public class UnitView implements View {
             .build();
     }
 
-    // The selected row follows the playing turn; selecting a row never plays it.
-    private void followPlayingTurn(ListView<TurnRow> listView) {
-        viewModel.playingTurnRowProperty().subscribe(
-            row -> row.ifPresentOrElse(
-                listView.getSelectionModel()::select, listView.getSelectionModel()::clearSelection
+    // The first row of a drill gets a line above it as the boundary of the drill,
+    // and a cue is shown in a muted color. The style classes mark what the cell is.
+    private static void styleTurnCell(ListCell<TurnRow> cell, @Nullable TurnRow row) {
+        cell.getStyleClass().removeAll(DRILL_START_CLASS, CUE_CLASS);
+        var style = new StringBuilder();
+        if (row != null && row.startsDrill()) {
+            cell.getStyleClass().add(DRILL_START_CLASS);
+            style.append(
+                "-fx-border-color: -color-accent-muted transparent transparent transparent; "
             )
-        );
+                .append("-fx-border-width: 2 0 0 0; ");
+        }
+        if (row != null && row.isCue()) {
+            cell.getStyleClass().add(CUE_CLASS);
+            style.append("-fx-text-fill: -color-accent-muted; ");
+        }
+        cell.setStyle(style.toString());
+    }
+
+    // The selected row follows the playing turn; selecting a row never plays it.
+    // The list scrolls so that the playing row stays in view (see TurnListScroll).
+    private void followPlayingTurn(ListView<TurnRow> listView) {
+        viewModel.playingTurnRowProperty().subscribe(row -> row.ifPresentOrElse(playing -> {
+            listView.getSelectionModel().select(playing);
+            TurnListScroll
+                .firstIndexToShow(
+                    listView.getItems().indexOf(playing), firstVisibleIndexOf(listView)
+                )
+                .ifPresent(listView::scrollTo);
+        }, listView.getSelectionModel()::clearSelection));
+    }
+
+    private static int firstVisibleIndexOf(ListView<TurnRow> listView) {
+        var flow = (VirtualFlow<?>) listView.lookup(".virtual-flow");
+        if (flow == null || flow.getFirstVisibleCell() == null) { return 0; }
+        return flow.getFirstVisibleCell().getIndex();
     }
 
     // A click on a row plays its turn. Selection changes do not, because the
@@ -128,7 +164,9 @@ public class UnitView implements View {
             @Override
             protected void updateItem(@Nullable TurnRow item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(item == null || empty ? null : item.label());
+                var row = empty ? null : item;
+                setText(row == null ? null : row.label());
+                styleTurnCell(this, row);
             }
         };
         cell.setOnMouseClicked(_ -> {

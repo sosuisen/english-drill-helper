@@ -1,6 +1,7 @@
 package com.sosuisha.presentation.screens.unit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.testfx.api.FxAssert.verifyThat;
 
@@ -34,6 +35,8 @@ import com.sosuisha.domain.repository.NullUnitRepository;
 import com.sosuisha.domain.service.NullAudioPlayer;
 import com.sosuisha.domain.service.PlaybackListener;
 
+import atlantafx.base.theme.Styles;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.stage.Stage;
 
@@ -49,6 +52,8 @@ class UnitViewTest {
         new AudioFile(Path.of("013_Unit 1.3.mp3"), "fingerprint-of-unit-1-3"),
         Optional.of(Instant.parse("2026-09-05T10:00:00Z"))
     );
+
+    private static final double SHORT_WINDOW_HEIGHT = 300;
 
     private UnitViewModel viewModel;
     private final AtomicReference<@Nullable Path> playedFile = new AtomicReference<>();
@@ -82,6 +87,7 @@ class UnitViewTest {
         stage.setScene(view.getScene());
         stage.setTitle(view.getTitle());
         stage.show();
+        stage.setHeight(SHORT_WINDOW_HEIGHT); // the turn list must scroll to show its last rows
     }
 
     @Test
@@ -145,7 +151,7 @@ class UnitViewTest {
         robot.clickOn("011_Unit 1.1.mp3");
         WaitForAsyncUtils.waitForFxEvents();
 
-        robot.clickOn("1-3");
+        robot.clickOn("1-Cue");
 
         assertEquals(UNIT_1_1.audioFile().path(), playedFile.get());
         assertEquals(Duration.ofSeconds(10), playedStart.get()); // 3.0 + 2 + 3.0 + 2
@@ -160,13 +166,73 @@ class UnitViewTest {
         robot.clickOn("#play");
         var listener = Objects.requireNonNull(playbackListener.get());
 
-        robot.interact(() -> listener.positionChanged(Duration.ofSeconds(11))); // inside 1-3
+        robot.interact(() -> listener.positionChanged(Duration.ofSeconds(11))); // inside 1-Cue
         WaitForAsyncUtils.waitForFxEvents();
 
         @SuppressWarnings("unchecked")
         ListView<TurnRow> listView = robot.lookup("#turns").queryAs(ListView.class);
-        assertEquals("1-3", listView.getSelectionModel().getSelectedItem().label());
+        assertEquals("1-Cue", listView.getSelectionModel().getSelectedItem().label());
         assertEquals(1, playCount.get());
+    }
+
+    @Test
+    @DisplayName("ユニット一覧とターン一覧は、行の高さを詰めた AtlantaFX の dense スタイルである")
+    void the_unit_list_and_the_turn_list_use_the_dense_style(FxRobot robot) {
+        assertTrue(robot.lookup("#units").query().getStyleClass().contains(Styles.DENSE));
+        assertTrue(robot.lookup("#turns").query().getStyleClass().contains(Styles.DENSE));
+    }
+
+    @Test
+    @DisplayName("ユニット一覧とターン一覧は、行の色が交互に変わる AtlantaFX の striped スタイルである")
+    void the_unit_list_and_the_turn_list_use_the_striped_style(FxRobot robot) {
+        assertTrue(robot.lookup("#units").query().getStyleClass().contains(Styles.STRIPED));
+        assertTrue(robot.lookup("#turns").query().getStyleClass().contains(Styles.STRIPED));
+    }
+
+    @Test
+    @DisplayName("各ドリルの先頭の行には、ドリルの区切りとして薄い青（-color-accent-muted）の 2px の上線が引かれる。先頭でない行には引かれない")
+    void the_first_row_of_each_drill_has_a_top_border(FxRobot robot) {
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertTrue(cellOf(robot, "1-1 [Key]").getStyleClass().contains("drill-start"));
+        assertTrue(cellOf(robot, "1-1 [Key]").getStyle().contains("-color-accent-muted"));
+        assertTrue(cellOf(robot, "1-1 [Key]").getStyle().contains("-fx-border-width: 2 0 0 0"));
+        assertTrue(cellOf(robot, "2-1 [Key]").getStyleClass().contains("drill-start"));
+        assertFalse(cellOf(robot, "1-2 [Key]").getStyleClass().contains("drill-start"));
+    }
+
+    @Test
+    @DisplayName("Cue の行は文字色がドリルの区切りと同じ薄い青（cue スタイル、色は -color-accent-muted）。Cue でない行はそうでない")
+    void cue_rows_have_the_muted_cue_style(FxRobot robot) {
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertTrue(cellOf(robot, "1-Cue").getStyleClass().contains("cue"));
+        assertTrue(
+            cellOf(robot, "1-Cue").getStyle().contains("-fx-text-fill: -color-accent-muted")
+        );
+        assertFalse(cellOf(robot, "1-3").getStyleClass().contains("cue"));
+    }
+
+    private static ListCell<?> cellOf(FxRobot robot, String label) {
+        return robot.lookup(label).queryAs(ListCell.class);
+    }
+
+    @Test
+    @DisplayName("再生位置に追従した選択行が一覧の可視範囲の外にあるとき、一覧が自動的にスクロールしてその行が見える")
+    void the_turn_list_scrolls_to_the_playing_turn_when_it_is_out_of_view(FxRobot robot) {
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+        robot.clickOn("#play");
+        var listener = Objects.requireNonNull(playbackListener.get());
+        assertFalse(robot.lookup("5-4").tryQuery().isPresent()); // the last row is not shown yet
+
+        robot.interact(() -> listener.positionChanged(Duration.ofSeconds(9_999))); // past every
+                                                                                   // turn
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertTrue(robot.lookup("5-4").tryQuery().isPresent());
     }
 
     @Test

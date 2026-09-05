@@ -312,7 +312,7 @@ class UnitViewModelTest {
     }
 
     @Test
-    @DisplayName("ターン行の一覧は、ドリル一覧から「ドリル番号-ターン番号」の順に作られ、Key sentence には [Key] が付く。5ドリル × 5ターンなら 1-1 [Key]、1-2 [Key]、1-3、1-4、1-5、2-1 [Key] … の25行")
+    @DisplayName("ターン行の一覧は、ドリル一覧から「ドリル番号-ターン番号」の順に作られ、Key sentence には [Key] が付く。Cue の行は「ドリル番号-Cue」で、番号は Cue を飛ばして数える。5ドリル × 5ターンなら 1-1 [Key]、1-2 [Key]、1-Cue、1-3、1-4、2-1 [Key] … の25行")
     void turn_rows_are_labeled_drill_number_dash_turn_number_with_key_for_key_sentences() {
         var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run);
 
@@ -322,14 +322,14 @@ class UnitViewModelTest {
         var labels = viewModel.getTurnRows().stream().map(TurnRow::label).toList();
         assertEquals(25, labels.size());
         assertEquals(
-            List.of("1-1 [Key]", "1-2 [Key]", "1-3", "1-4", "1-5", "2-1 [Key]"),
+            List.of("1-1 [Key]", "1-2 [Key]", "1-Cue", "1-3", "1-4", "2-1 [Key]"),
             labels.subList(0, 6)
         );
-        assertEquals("5-5", labels.getLast());
+        assertEquals("5-4", labels.getLast());
     }
 
     @Test
-    @DisplayName("Unit 1.1 型（Key の対が冒頭に1組だけ）のユニットを選ぶと、Key の対はドリル0になり、ターン行は 0-1 [Key]、0-2 [Key]、1-1、1-2、1-3、2-1 … になる")
+    @DisplayName("Unit 1.1 型（Key の対が冒頭に1組だけ）のユニットを選ぶと、Key の対はドリル0になり、ターン行は 0-1 [Key]、0-2 [Key]、1-Cue、1-1、1-2、2-Cue … になる")
     void turn_rows_of_a_unit_with_one_key_pair_start_with_the_key_pair_as_drill_zero() {
         Function<AudioFile, List<Segment>> oneKeyPair = _ -> unitWithOneKeyPair();
         var viewModel = newViewModel(List.of(UNIT_1_1), oneKeyPair, Runnable::run);
@@ -340,7 +340,7 @@ class UnitViewModelTest {
         var labels = viewModel.getTurnRows().stream().map(TurnRow::label).toList();
         assertEquals(17, labels.size());
         assertEquals(
-            List.of("0-1 [Key]", "0-2 [Key]", "1-1", "1-2", "1-3", "2-1", "2-2", "2-3"),
+            List.of("0-1 [Key]", "0-2 [Key]", "1-Cue", "1-1", "1-2", "2-Cue", "2-1", "2-2"),
             labels.subList(0, 8)
         );
     }
@@ -359,7 +359,7 @@ class UnitViewModelTest {
     }
 
     @Test
-    @DisplayName("Unit 0.x のユニットを選ぶと、タイトルがドリル0、Cue ごとにドリルが作られ、ターン行は 0-1、1-1 … 1-5、2-1 … 2-5 の11行になる")
+    @DisplayName("Unit 0.x のユニットを選ぶと、タイトルがドリル0、Cue ごとにドリルが作られ、ターン行は 0-1、1-Cue、1-1 … 1-4、2-Cue … 2-4 の11行になる")
     void an_introduction_unit_has_the_title_as_drill_zero_and_a_drill_per_cue() {
         var unit0_1 = new Unit(
             new AudioFile(Path.of("units", "001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1"),
@@ -373,8 +373,8 @@ class UnitViewModelTest {
 
         var labels = viewModel.getTurnRows().stream().map(TurnRow::label).toList();
         assertEquals(11, labels.size());
-        assertEquals(List.of("0-1", "1-1", "1-2"), labels.subList(0, 3));
-        assertEquals("2-5", labels.getLast());
+        assertEquals(List.of("0-1", "1-Cue", "1-1"), labels.subList(0, 3));
+        assertEquals("2-4", labels.getLast());
     }
 
     @Test

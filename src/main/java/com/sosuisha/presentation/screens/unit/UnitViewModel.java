@@ -3,6 +3,7 @@ package com.sosuisha.presentation.screens.unit;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -15,6 +16,7 @@ import com.sosuisha.domain.model.AudioFile;
 import com.sosuisha.domain.model.Drill;
 import com.sosuisha.domain.model.DrillBook;
 import com.sosuisha.domain.model.Segment;
+import com.sosuisha.domain.model.Turn;
 import com.sosuisha.domain.model.Unit;
 import com.sosuisha.domain.repository.UnitRepository;
 import com.sosuisha.domain.service.AudioPlayer;
@@ -163,10 +165,20 @@ public class UnitViewModel {
         return readOnlyTurnRows;
     }
 
+    /** The shown numbers count the turns of a drill without its cues. */
     private static List<TurnRow> turnRowsOf(List<Drill> drills) {
-        return drills.stream()
-            .flatMap(drill -> drill.turns().stream().map(turn -> new TurnRow(drill.number(), turn)))
-            .toList();
+        var rows = new ArrayList<TurnRow>();
+        for (var drill : drills) {
+            var shownNumber = 0;
+            for (var turn : drill.turns()) {
+                var isCue = turn.role() == Turn.Role.CUE;
+                if (!isCue) {
+                    shownNumber++;
+                }
+                rows.add(new TurnRow(drill.number(), turn, isCue ? 0 : shownNumber));
+            }
+        }
+        return List.copyOf(rows);
     }
 
     /**
