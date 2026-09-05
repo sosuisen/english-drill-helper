@@ -11,6 +11,7 @@ import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 import com.sosuisha.domain.model.AudioFile;
+import com.sosuisha.domain.model.Drill;
 import com.sosuisha.domain.model.Segment;
 import com.sosuisha.domain.model.Unit;
 import com.sosuisha.domain.repository.UnitRepository;
@@ -21,13 +22,14 @@ import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 
 /**
  * ViewModel for the unit screen. It holds the units and the selected unit,
- * loads the segments of the selected unit, plays the selected unit, and
- * records the time when the playback stopped.
+ * loads the segments of the selected unit and builds its drills from them,
+ * plays the selected unit, and records the time when the playback stopped.
  */
 public class UnitViewModel {
     private static final DateTimeFormatter LAST_PLAYED_AT_FORMAT =
@@ -42,6 +44,9 @@ public class UnitViewModel {
     private final ObservableList<Segment> segments = FXCollections.observableArrayList();
     private final ObservableList<Segment> readOnlySegments =
         FXCollections.unmodifiableObservableList(segments);
+    private final ObservableList<Drill> drills = FXCollections.observableArrayList();
+    private final ObservableList<Drill> readOnlyDrills =
+        FXCollections.unmodifiableObservableList(drills);
     private final AudioPlayer player;
     private final UnitRepository repository;
     private final Clock clock;
@@ -73,6 +78,9 @@ public class UnitViewModel {
         selectedFileName.bind(
             selectedUnit.map(unit -> unit.map(Unit::fileName).orElse(""))
         );
+        segments.addListener(
+            (ListChangeListener<Segment>) _ -> drills.setAll(Drill.drillsOf(segments))
+        );
     }
 
     /**
@@ -94,6 +102,18 @@ public class UnitViewModel {
      */
     ObservableList<Segment> getSegments() {
         return readOnlySegments;
+    }
+
+    /**
+     * Returns the drills of the selected unit, in time order. They are built
+     * from the segments whenever the segment list changes, so the list is
+     * empty while the segment list is empty. The list cannot be modified by
+     * the caller.
+     *
+     * @return read-only observable list of the drills
+     */
+    ObservableList<Drill> getDrills() {
+        return readOnlyDrills;
     }
 
     /**

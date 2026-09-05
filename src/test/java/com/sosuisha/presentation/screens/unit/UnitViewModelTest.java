@@ -28,6 +28,7 @@ import org.testfx.framework.junit5.ApplicationExtension;
 import org.testfx.util.WaitForAsyncUtils;
 
 import com.sosuisha.domain.model.AudioFile;
+import com.sosuisha.domain.model.Drill;
 import com.sosuisha.domain.model.Segment;
 import com.sosuisha.domain.model.Unit;
 import com.sosuisha.domain.repository.NullUnitRepository;
@@ -208,11 +209,11 @@ class UnitViewModelTest {
 
     // セグメント読み込みのテスト。ローダーは指紋ごとの固定の対応表、Executor は同期実行または手動実行
     private static final List<Segment> SEGMENTS_0_1 = List.of(
-        new Segment(Duration.ofMillis(1000), Segment.Kind.SOUND),
-        new Segment(Duration.ofMillis(3000), Segment.Kind.SILENCE)
+        new Segment(0, Duration.ZERO, Duration.ofMillis(1000), Segment.Kind.SOUND),
+        new Segment(1, Duration.ofMillis(1000), Duration.ofMillis(3000), Segment.Kind.SILENCE)
     );
     private static final List<Segment> SEGMENTS_0_2 =
-        List.of(new Segment(Duration.ofMillis(2500), Segment.Kind.SOUND));
+        List.of(new Segment(0, Duration.ZERO, Duration.ofMillis(2500), Segment.Kind.SOUND));
     private static final Function<AudioFile, List<Segment>> SEGMENT_TABLE = audioFile -> Objects
         .requireNonNull(
             Map.of(
@@ -289,6 +290,21 @@ class UnitViewModelTest {
         WaitForAsyncUtils.waitForFxEvents();
 
         assertEquals(SEGMENTS_0_2, viewModel.getSegments());
+    }
+
+    @Test
+    @DisplayName("セグメント一覧が更新されると、ドリル一覧がそれに基づいて置き換わる。選択を外してセグメント一覧が空になると、ドリル一覧も空になる")
+    void the_drill_list_follows_the_segment_list_and_empties_with_it() {
+        var viewModel = newViewModel(List.of(UNIT_0_1), SEGMENT_TABLE, Runnable::run);
+
+        viewModel.selectUnit(UNIT_0_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        var drillsOfSelected = List.copyOf(viewModel.getDrills());
+        viewModel.selectUnit(null);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals(List.of(new Drill(List.of(0, 1))), drillsOfSelected);
+        assertEquals(List.of(), viewModel.getDrills());
     }
 
     private static UnitViewModel newViewModel(
