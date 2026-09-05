@@ -11,6 +11,7 @@ import com.sosuisha.presentation.View;
 
 import atlantafx.base.controls.Card;
 import atlantafx.base.theme.Styles;
+import atlantafx.base.theme.Tweaks;
 import io.github.sosuisen.jfxbuilder.controls.ButtonBuilder;
 import io.github.sosuisen.jfxbuilder.controls.LabelBuilder;
 import io.github.sosuisen.jfxbuilder.controls.ListViewBuilder;
@@ -44,6 +45,10 @@ public class UnitView implements View {
     private static final double LAST_PLAYED_COLUMN_WIDTH = 130;
     private static final String DRILL_START_CLASS = "drill-start";
     private static final String CUE_CLASS = "cue";
+    private static final String FLUSH_CARD_CLASS = "flush";
+    private static final String STYLESHEET = "/styles/unit.css";
+    /** Gap between the window edge and the panes, and between the panes. */
+    private static final double PANE_GAP = 8;
 
     private final UnitViewModel viewModel;
     private final Scene scene;
@@ -96,8 +101,14 @@ public class UnitView implements View {
                             .withChildren(
                                 card(
                                     "unitPane",
+                                    LabelBuilder.create()
+                                        .id("audioFolder")
+                                        .addStyleClass(Styles.TITLE_3)
+                                        .text(viewModel.getAudioFolderText())
+                                        .build(),
                                     TableViewBuilder.<Unit>create()
                                         .id("units")
+                                        .addStyleClass(Tweaks.EDGE_TO_EDGE)
                                         .addStyleClass(Styles.DENSE)
                                         .addStyleClass(Styles.STRIPED)
                                         .items(viewModel.getUnits())
@@ -114,16 +125,15 @@ public class UnitView implements View {
                                 ),
                                 card(
                                     "drillPane",
+                                    LabelBuilder.create()
+                                        .id("selectedUnitTitle")
+                                        .addStyleClass(Styles.TITLE_3)
+                                        .textPropertyApply(
+                                            text -> text.bind(viewModel.selectedUnitTitleProperty())
+                                        )
+                                        .build(),
                                     VBoxBuilder
                                         .withChildren(
-                                            LabelBuilder.create()
-                                                .id("selectedUnitTitle")
-                                                .addStyleClass(Styles.TITLE_3)
-                                                .textPropertyApply(
-                                                    text -> text
-                                                        .bind(viewModel.selectedUnitTitleProperty())
-                                                )
-                                                .build(),
                                             HBoxBuilder
                                                 .withChildren(
                                                     ButtonBuilder.create()
@@ -144,10 +154,13 @@ public class UnitView implements View {
                                                         .apply(this::disableWithoutSelection)
                                                         .build()
                                                 )
+                                                .id("playback")
                                                 .spacing(10)
+                                                .padding(new Insets(0, PANE_GAP, 0, PANE_GAP))
                                                 .build(),
                                             ListViewBuilder.<TurnRow>create()
                                                 .id("turns")
+                                                .addStyleClass(Tweaks.EDGE_TO_EDGE)
                                                 .addStyleClass(Styles.DENSE)
                                                 .addStyleClass(Styles.STRIPED)
                                                 .items(viewModel.getTurnRows())
@@ -160,8 +173,8 @@ public class UnitView implements View {
                                         .build()
                                 )
                             )
-                            .spacing(10)
-                            .padding(new Insets(15))
+                            .spacing(PANE_GAP)
+                            .padding(new Insets(PANE_GAP))
                             .vGrowInVBox(Priority.ALWAYS)
                             .build()
                     )
@@ -169,13 +182,22 @@ public class UnitView implements View {
             )
             .width(WIDTH)
             .height(HEIGHT)
+            .apply(scene -> scene.getStylesheets().add(stylesheet()))
             .build();
     }
 
+    private static String stylesheet() {
+        return Objects.requireNonNull(
+            UnitView.class.getResource(STYLESHEET), "the stylesheet must be on the classpath"
+        ).toExternalForm();
+    }
+
     // Each pane is a card so that the two lists read as separate blocks.
-    private static Card card(String id, Node body) {
+    private static Card card(String id, Node header, Node body) {
         var card = new Card();
         card.setId(id);
+        card.setHeader(header);
+        card.getStyleClass().add(FLUSH_CARD_CLASS);
         card.setBody(body);
         HBox.setHgrow(card, Priority.ALWAYS);
         return card;

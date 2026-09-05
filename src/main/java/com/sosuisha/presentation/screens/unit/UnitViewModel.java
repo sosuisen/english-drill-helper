@@ -1,5 +1,6 @@
 package com.sosuisha.presentation.screens.unit;
 
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
@@ -67,11 +68,13 @@ public class UnitViewModel {
     private final Clock clock;
     private final Function<AudioFile, List<Segment>> segmentLoader;
     private final Executor executor;
+    private final Path audioFolder;
 
     /**
      * Creates the view model.
      *
      * @param units units, in the order shown to the user
+     * @param audioFolder folder the units were loaded from, shown to the user
      * @param player player that plays the selected unit
      * @param repository database that keeps the records of the units
      * @param clock clock that gives the time when the playback stops
@@ -80,9 +83,11 @@ public class UnitViewModel {
      * @throws NullPointerException if any argument is null
      */
     public UnitViewModel(
-        List<Unit> units, AudioPlayer player, UnitRepository repository, Clock clock,
+        List<Unit> units, Path audioFolder, AudioPlayer player, UnitRepository repository,
+        Clock clock,
         Function<AudioFile, List<Segment>> segmentLoader, Executor executor) {
         Objects.requireNonNull(units, "units must not be null");
+        this.audioFolder = Objects.requireNonNull(audioFolder, "audioFolder must not be null");
         this.player = Objects.requireNonNull(player, "player must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
@@ -244,6 +249,15 @@ public class UnitViewModel {
      */
     public ReadOnlyStringProperty selectedUnitTitleProperty() {
         return selectedUnitTitle.getReadOnlyProperty();
+    }
+
+    /**
+     * Returns the audio folder the units were loaded from, as text to show.
+     *
+     * @return the path of the folder
+     */
+    public String getAudioFolderText() {
+        return audioFolder.toString();
     }
 
     /**

@@ -39,10 +39,13 @@ import com.sosuisha.domain.service.PlaybackListener;
 
 import atlantafx.base.controls.Card;
 import atlantafx.base.theme.Styles;
+import atlantafx.base.theme.Tweaks;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
@@ -59,6 +62,7 @@ class UnitViewTest {
         Optional.of(Instant.parse("2026-09-05T10:00:00Z"))
     );
 
+    private static final Path AUDIO_FOLDER = Path.of("D:", "drills");
     private static final double SHORT_WINDOW_HEIGHT = 300;
 
     private UnitViewModel viewModel;
@@ -86,7 +90,8 @@ class UnitViewTest {
             }
         };
         viewModel = new UnitViewModel(
-            List.of(UNIT_1_1, UNIT_1_2, PLAYED_UNIT_1_3), player, new NullUnitRepository(),
+            List.of(UNIT_1_1, UNIT_1_2, PLAYED_UNIT_1_3), AUDIO_FOLDER, player,
+            new NullUnitRepository(),
             Clock.fixed(Instant.EPOCH, ZoneOffset.UTC), UnitViewTest::segmentsOf, Runnable::run
         );
         var view = new UnitView(viewModel);
@@ -334,6 +339,60 @@ class UnitViewTest {
         var headerBar = robot.lookup("#headerBar").query();
 
         assertTrue(robot.from(headerBar).lookup("English Drill Helper").tryQuery().isPresent());
+    }
+
+    @Test
+    @DisplayName("Card の中のユニット一覧とターン一覧は、枠が二重にならないよう AtlantaFX の EDGE_TO_EDGE スタイルで自身の枠を持たない")
+    void the_lists_inside_the_cards_have_no_borders_of_their_own(FxRobot robot) {
+        assertTrue(robot.lookup("#units").query().getStyleClass().contains(Tweaks.EDGE_TO_EDGE));
+        assertTrue(robot.lookup("#turns").query().getStyleClass().contains(Tweaks.EDGE_TO_EDGE));
+    }
+
+    @Test
+    @DisplayName("左右の Card は内側の余白を持たない flush スタイルで、そのスタイルを定義する画面のスタイルシート（unit.css）が読み込まれている。リストが Card の枠まで広がるようにするため")
+    void the_cards_are_flush_and_the_screen_stylesheet_is_loaded(FxRobot robot) {
+        var unitPane = robot.lookup("#unitPane").query();
+        var drillPane = robot.lookup("#drillPane").query();
+
+        assertTrue(unitPane.getStyleClass().contains("flush"));
+        assertTrue(drillPane.getStyleClass().contains("flush"));
+        assertTrue(
+            unitPane.getScene().getStylesheets().stream()
+                .anyMatch(s -> s.endsWith("/styles/unit.css"))
+        );
+    }
+
+    @Test
+    @DisplayName("ユニット一覧の Card の header には、現在開いている音声フォルダのパスが表示される")
+    void the_unit_pane_header_shows_the_audio_folder(FxRobot robot) {
+        var unitPane = robot.lookup("#unitPane").queryAs(Card.class);
+
+        assertEquals(AUDIO_FOLDER.toString(), ((Label) unitPane.getHeader()).getText());
+    }
+
+    @Test
+    @DisplayName("drillPane の Card の header には選択中ユニットの表示名のラベル（selectedUnitTitle）があり、body に Play/Stop とターン一覧が残る")
+    void the_drill_pane_header_is_the_selected_unit_title(FxRobot robot) {
+        var drillPane = robot.lookup("#drillPane").queryAs(Card.class);
+
+        assertEquals("selectedUnitTitle", drillPane.getHeader().getId());
+        assertTrue(drillPane.getBody().lookupAll("#play").size() == 1);
+        assertTrue(drillPane.getBody().lookupAll("#turns").size() == 1);
+    }
+
+    @Test
+    @DisplayName("Play/Stop のボタンの並び（ID playback）には左右に 8px の余白があり、Card の枠に付かない")
+    void the_playback_buttons_have_a_margin_from_the_card_edge(FxRobot robot) {
+        var playback = (Region) robot.lookup("#playback").query();
+
+        assertEquals(8, playback.getPadding().getLeft());
+        assertEquals(8, playback.getPadding().getRight());
+    }
+
+    @Test
+    @DisplayName("unitPane の header（音声フォルダのパス）は、drillPane の見出しと揃うよう TITLE_3 のスタイルを持つ")
+    void the_unit_pane_header_is_styled_like_the_drill_pane_heading(FxRobot robot) {
+        assertTrue(robot.lookup("#audioFolder").query().getStyleClass().contains(Styles.TITLE_3));
     }
 
     @Test

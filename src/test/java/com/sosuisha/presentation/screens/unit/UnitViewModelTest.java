@@ -41,6 +41,7 @@ import com.sosuisha.domain.service.PlaybackListener;
 
 @ExtendWith(ApplicationExtension.class) // Task needs the JavaFX toolkit
 class UnitViewModelTest {
+    private static final Path AUDIO_FOLDER = Path.of("D:", "drills");
     private static final Function<AudioFile, List<Segment>> NO_SEGMENTS = _ -> List.of();
     private static final Unit UNIT_1_1 = new Unit(
         new AudioFile(Path.of("units", "011_Unit 1.1.mp3"), "fingerprint-of-unit-1-1"),
@@ -81,6 +82,14 @@ class UnitViewModelTest {
         assertTrue(viewModel.unitSelectedProperty().get());
         viewModel.selectUnit(null);
         assertFalse(viewModel.unitSelectedProperty().get());
+    }
+
+    @Test
+    @DisplayName("音声フォルダのパスは、表示用の文字列として公開される")
+    void the_audio_folder_is_exposed_as_text() {
+        var viewModel = newViewModel(List.of(UNIT_1_1), new NullAudioPlayer());
+
+        assertEquals(AUDIO_FOLDER.toString(), viewModel.getAudioFolderText());
     }
 
     @Test
@@ -138,7 +147,7 @@ class UnitViewModelTest {
         };
         var stoppedAt = Instant.parse("2026-09-05T10:00:00Z");
         var viewModel = new UnitViewModel(
-            List.of(UNIT_1_1), stopCapturingPlayer(stopCallback), repository,
+            List.of(UNIT_1_1), AUDIO_FOLDER, stopCapturingPlayer(stopCallback), repository,
             Clock.fixed(stoppedAt, ZoneOffset.UTC), NO_SEGMENTS, Runnable::run
         );
         viewModel.selectUnit(UNIT_1_1);
@@ -155,7 +164,7 @@ class UnitViewModelTest {
     void the_text_of_the_last_played_at_is_yyyy_mm_dd_hh_mm_in_the_zone_of_the_clock() {
         var played = UNIT_1_1.withLastPlayedAt(Instant.parse("2026-09-05T10:05:00Z"));
         var viewModel = new UnitViewModel(
-            List.of(played), new NullAudioPlayer(), new NullUnitRepository(),
+            List.of(played), AUDIO_FOLDER, new NullAudioPlayer(), new NullUnitRepository(),
             Clock.fixed(Instant.EPOCH, ZoneOffset.ofHours(9)), NO_SEGMENTS, Runnable::run
         );
 
@@ -168,7 +177,7 @@ class UnitViewModelTest {
         var stopCallback = new AtomicReference<@Nullable Runnable>();
         var stoppedAt = Instant.parse("2026-09-05T10:00:00Z");
         var viewModel = new UnitViewModel(
-            List.of(UNIT_1_1, UNIT_1_2), stopCapturingPlayer(stopCallback),
+            List.of(UNIT_1_1, UNIT_1_2), AUDIO_FOLDER, stopCapturingPlayer(stopCallback),
             new NullUnitRepository(), Clock.fixed(stoppedAt, ZoneOffset.UTC), NO_SEGMENTS,
             Runnable::run
         );
@@ -190,7 +199,8 @@ class UnitViewModelTest {
         var secondStop = Instant.parse("2026-09-05T11:00:00Z");
         var now = new AtomicReference<Instant>(firstStop);
         var viewModel = new UnitViewModel(
-            List.of(UNIT_1_1), stopCapturingPlayer(stopCallback), new NullUnitRepository(),
+            List.of(UNIT_1_1), AUDIO_FOLDER, stopCapturingPlayer(stopCallback),
+            new NullUnitRepository(),
             settableClock(now), NO_SEGMENTS, Runnable::run
         );
         viewModel.selectUnit(UNIT_1_1);
@@ -420,7 +430,8 @@ class UnitViewModelTest {
             }
         };
         var viewModel = new UnitViewModel(
-            List.of(UNIT_1_1), stopCapturingPlayer(stopCallback), repository, Clock.systemUTC(),
+            List.of(UNIT_1_1), AUDIO_FOLDER, stopCapturingPlayer(stopCallback), repository,
+            Clock.systemUTC(),
             SEGMENT_TABLE, Runnable::run
         );
         viewModel.selectUnit(UNIT_1_1);
@@ -582,7 +593,8 @@ class UnitViewModelTest {
         List<Unit> units, Function<AudioFile, List<Segment>> segmentLoader, Executor executor,
         AudioPlayer player) {
         return new UnitViewModel(
-            units, player, new NullUnitRepository(), Clock.systemUTC(), segmentLoader, executor
+            units, AUDIO_FOLDER, player, new NullUnitRepository(), Clock.systemUTC(), segmentLoader,
+            executor
         );
     }
 
@@ -633,14 +645,15 @@ class UnitViewModelTest {
     private static UnitViewModel newViewModel(
         List<Unit> units, Function<AudioFile, List<Segment>> segmentLoader, Executor executor) {
         return new UnitViewModel(
-            units, new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC(),
+            units, AUDIO_FOLDER, new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC(),
             segmentLoader, executor
         );
     }
 
     private static UnitViewModel newViewModel(List<Unit> units, AudioPlayer player) {
         return new UnitViewModel(
-            units, player, new NullUnitRepository(), Clock.systemUTC(), NO_SEGMENTS, Runnable::run
+            units, AUDIO_FOLDER, player, new NullUnitRepository(), Clock.systemUTC(), NO_SEGMENTS,
+            Runnable::run
         );
     }
 

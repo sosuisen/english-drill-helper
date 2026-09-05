@@ -65,7 +65,7 @@ public class App extends Application {
         );
         var unitViewModel =
             new UnitViewModel(
-                units, new MediaAudioPlayer(), repository, Clock.systemDefaultZone(),
+                units, AUDIO_FOLDER, new MediaAudioPlayer(), repository, Clock.systemDefaultZone(),
                 segmentLoader::load, runnable -> Thread.ofVirtual().start(runnable)
             );
         windowManager.registerView(new UnitView(unitViewModel));

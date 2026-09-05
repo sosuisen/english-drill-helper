@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Path;
 import java.time.Clock;
 import java.util.List;
 
@@ -31,7 +32,8 @@ class WindowManagerTest {
         var view =
             new UnitView(
                 new UnitViewModel(
-                    List.of(), new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC(),
+                    List.of(), Path.of("D:", "drills"), new NullAudioPlayer(),
+                    new NullUnitRepository(), Clock.systemUTC(),
                     _ -> List.of(), Runnable::run
                 )
             );
@@ -57,7 +59,8 @@ class WindowManagerTest {
         var view =
             new UnitView(
                 new UnitViewModel(
-                    List.of(), new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC(),
+                    List.of(), Path.of("D:", "drills"), new NullAudioPlayer(),
+                    new NullUnitRepository(), Clock.systemUTC(),
                     _ -> List.of(), Runnable::run
                 )
             );
@@ -78,7 +81,8 @@ class WindowManagerTest {
         windowManager.registerView(
             new UnitView(
                 new UnitViewModel(
-                    List.of(), new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC(),
+                    List.of(), Path.of("D:", "drills"), new NullAudioPlayer(),
+                    new NullUnitRepository(), Clock.systemUTC(),
                     _ -> List.of(), Runnable::run
                 )
             )

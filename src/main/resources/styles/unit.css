@@ -1,0 +1,10 @@
+/* Styles of the unit screen that AtlantaFX does not provide. */
+
+/* A card whose body reaches its border, so that a list inside it has no gap. */
+.card.flush > .container {
+  -fx-padding: 0;
+}
+
+.card.flush > .container > .body {
+  -fx-padding: 0;
+}
