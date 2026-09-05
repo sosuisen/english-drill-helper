@@ -7,8 +7,9 @@ import com.sosuisha.domain.model.Turn;
 /**
  * A row of the turn list on the unit screen: one turn with the number of its
  * drill, shown as "drill-turn" such as {@code 1-2}. The shown number counts
- * only the turns the learner repeats, so a cue takes no number and is shown
- * as {@code 1-Cue}. A key sentence gets {@code [Key]} added.
+ * only the turns the learner repeats, so a cue takes no number and has no
+ * label. The role of a turn is not part of the label; the list shows it with
+ * an icon.
  *
  * @param drillNumber number of the drill the turn belongs to, zero or more
  * @param turn the turn
@@ -16,9 +17,6 @@ import com.sosuisha.domain.model.Turn;
  *        the drill; zero for a cue
  */
 record TurnRow(int drillNumber, Turn turn, int shownNumber) {
-    private static final String KEY_SENTENCE_MARK = " [Key]";
-    private static final String CUE_MARK = "Cue";
-
     /**
      * Creates the row.
      *
@@ -50,6 +48,15 @@ record TurnRow(int drillNumber, Turn turn, int shownNumber) {
     }
 
     /**
+     * Tells whether the turn is a key sentence.
+     *
+     * @return true if the turn is a key sentence
+     */
+    boolean isKeySentence() {
+        return turn.role() == Turn.Role.KEY_SENTENCE;
+    }
+
+    /**
      * Tells whether the turn is the first of its drill.
      *
      * @return true if the turn starts its drill
@@ -62,12 +69,10 @@ record TurnRow(int drillNumber, Turn turn, int shownNumber) {
      * Returns the text shown in the list.
      *
      * @return the drill number and the shown number joined by a hyphen, such
-     *         as {@code 1-2}; {@code 1-Cue} for a cue; {@code [Key]} is added
-     *         for a key sentence
+     *         as {@code 1-2}; empty for a cue
      */
     String label() {
-        if (isCue()) { return drillNumber + "-" + CUE_MARK; }
-        var label = drillNumber + "-" + shownNumber;
-        return turn.role() == Turn.Role.KEY_SENTENCE ? label + KEY_SENTENCE_MARK : label;
+        if (isCue()) { return ""; }
+        return drillNumber + "-" + shownNumber;
     }
 }

@@ -3,7 +3,9 @@ package com.sosuisha.presentation.screens.unit;
 import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
+import org.kordamp.ikonli.Ikon;
 import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material2.Material2AL;
 import org.kordamp.ikonli.material2.Material2MZ;
 
 import com.sosuisha.domain.model.Unit;
@@ -47,6 +49,7 @@ public class UnitView implements View {
     private static final String DRILL_START_CLASS = "drill-start";
     private static final String CUE_CLASS = "cue";
     private static final String PLAYING_CLASS = "playing";
+    private static final String ROLE_ICON_COLOR = "rgba(0, 0, 0, 0.6)";
     private static final String FLUSH_CARD_CLASS = "flush";
     private static final String STYLESHEET = "/styles/unit.css";
     /** Gap between the window edge and the panes, and between the panes. */
@@ -218,6 +221,21 @@ public class UnitView implements View {
         return card;
     }
 
+    // The role of a turn is shown by an icon. It is drawn in 60% black: a light
+    // color was too faint to see.
+    private static @Nullable FontIcon roleIconOf(TurnRow row) {
+        if (row.isKeySentence()) { return roleIcon(Material2MZ.VPN_KEY); }
+        if (row.isCue()) { return roleIcon(Material2AL.ANNOUNCEMENT); }
+        return null;
+    }
+
+    private static FontIcon roleIcon(Ikon code) {
+        var icon = new FontIcon(code);
+        // FontIcon keeps its font family in its own inline style, so the color is added to it.
+        icon.setStyle(icon.getStyle() + " -fx-icon-color: " + ROLE_ICON_COLOR + ";");
+        return icon;
+    }
+
     private boolean isPlaying(TurnRow row) {
         return viewModel.playingTurnRowProperty().get().filter(row::equals).isPresent();
     }
@@ -241,7 +259,6 @@ public class UnitView implements View {
         }
         if (row != null && row.isCue()) {
             cell.getStyleClass().add(CUE_CLASS);
-            style.append("-fx-text-fill: -color-accent-muted; ");
         }
         if (row != null && isPlaying(row)) {
             cell.getStyleClass().add(PLAYING_CLASS);
@@ -281,6 +298,7 @@ public class UnitView implements View {
                 super.updateItem(item, empty);
                 var row = empty ? null : item;
                 setText(row == null ? null : row.label());
+                setGraphic(row == null ? null : roleIconOf(row));
                 styleTurnCell(this, row);
             }
         };

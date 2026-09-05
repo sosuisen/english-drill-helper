@@ -2,6 +2,7 @@ package com.sosuisha.presentation.screens.unit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.testfx.api.FxAssert.verifyThat;
 
@@ -22,6 +23,7 @@ import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material2.Material2AL;
 import org.kordamp.ikonli.material2.Material2MZ;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.api.FxRobot;
@@ -170,12 +172,12 @@ class UnitViewTest {
     }
 
     @Test
-    @DisplayName("ユニットを選ぶと、ターン行の一覧に「1-1 [Key]」「1-3」などのラベルが表示される")
+    @DisplayName("ユニットを選ぶと、ターン行の一覧に「1-1」「1-3」などのラベルが表示される")
     void selecting_a_unit_shows_the_turn_labels_in_the_list(FxRobot robot) {
         robot.clickOn("011_Unit 1.1.mp3");
         WaitForAsyncUtils.waitForFxEvents();
 
-        assertTrue(robot.lookup("1-1 [Key]").tryQuery().isPresent());
+        assertTrue(robot.lookup("1-1").tryQuery().isPresent());
         assertTrue(robot.lookup("1-3").tryQuery().isPresent());
     }
 
@@ -185,7 +187,7 @@ class UnitViewTest {
         robot.clickOn("011_Unit 1.1.mp3");
         WaitForAsyncUtils.waitForFxEvents();
 
-        robot.clickOn("1-Cue");
+        robot.clickOn(cueCellOf(robot, 1));
 
         assertEquals(UNIT_1_1.audioFile().path(), playedFile.get());
         assertEquals(Duration.ofSeconds(10), playedStart.get()); // 3.0 + 2 + 3.0 + 2
@@ -211,23 +213,22 @@ class UnitViewTest {
         robot.clickOn("011_Unit 1.1.mp3");
         WaitForAsyncUtils.waitForFxEvents();
 
-        assertTrue(cellOf(robot, "1-1 [Key]").getStyleClass().contains("drill-start"));
-        assertTrue(cellOf(robot, "1-1 [Key]").getStyle().contains("-color-accent-muted"));
-        assertTrue(cellOf(robot, "1-1 [Key]").getStyle().contains("-fx-border-width: 2 0 0 0"));
-        assertTrue(cellOf(robot, "2-1 [Key]").getStyleClass().contains("drill-start"));
-        assertFalse(cellOf(robot, "1-2 [Key]").getStyleClass().contains("drill-start"));
+        assertTrue(cellOf(robot, "1-1").getStyleClass().contains("drill-start"));
+        assertTrue(cellOf(robot, "1-1").getStyle().contains("-color-accent-muted"));
+        assertTrue(cellOf(robot, "1-1").getStyle().contains("-fx-border-width: 2 0 0 0"));
+        assertTrue(cellOf(robot, "2-1").getStyleClass().contains("drill-start"));
+        assertFalse(cellOf(robot, "1-2").getStyleClass().contains("drill-start"));
     }
 
     @Test
-    @DisplayName("Cue の行は文字色がドリルの区切りと同じ薄い青（cue スタイル、色は -color-accent-muted）。Cue でない行はそうでない")
-    void cue_rows_have_the_muted_cue_style(FxRobot robot) {
+    @DisplayName("Cue の行には cue スタイルが付き、文字は表示されない（アイコンだけ）。Cue でない行はそうでない")
+    void cue_rows_have_the_cue_style_and_no_text(FxRobot robot) {
         robot.clickOn("011_Unit 1.1.mp3");
         WaitForAsyncUtils.waitForFxEvents();
 
-        assertTrue(cellOf(robot, "1-Cue").getStyleClass().contains("cue"));
-        assertTrue(
-            cellOf(robot, "1-Cue").getStyle().contains("-fx-text-fill: -color-accent-muted")
-        );
+        var cue = cueCellOf(robot, 1);
+        assertTrue(cue.getStyleClass().contains("cue"));
+        assertEquals("", cue.getText());
         assertFalse(cellOf(robot, "1-3").getStyleClass().contains("cue"));
     }
 
@@ -235,8 +236,18 @@ class UnitViewTest {
         return robot.lookup(label).queryAs(ListCell.class);
     }
 
+    // A cue row has no text, so it is found by its style class and its drill.
+    private static ListCell<?> cueCellOf(FxRobot robot, int drillNumber) {
+        for (var cell : robot.lookup(".cue").queryAllAs(ListCell.class)) {
+            if (cell.getItem() instanceof TurnRow row && row.drillNumber() == drillNumber) {
+                return cell;
+            }
+        }
+        throw new AssertionError("no cue row of drill " + drillNumber);
+    }
+
     @Test
-    @DisplayName("再生位置に追従した選択行が一覧の可視範囲の外にあるとき、一覧が自動的にスクロールしてその行が見える")
+    @DisplayName("再生中の行が一覧の可視範囲の外にあるとき、一覧が自動的にスクロールしてその行が見える")
     void the_turn_list_scrolls_to_the_playing_turn_when_it_is_out_of_view(FxRobot robot) {
         robot.clickOn("011_Unit 1.1.mp3");
         WaitForAsyncUtils.waitForFxEvents();
@@ -398,21 +409,21 @@ class UnitViewTest {
     void the_playing_row_gets_the_playing_style_and_the_selection_stays(FxRobot robot) {
         robot.clickOn("011_Unit 1.1.mp3");
         WaitForAsyncUtils.waitForFxEvents();
-        robot.clickOn("1-1 [Key]"); // selects and plays the first key sentence
+        robot.clickOn("1-1"); // selects and plays the first key sentence
         var listener = Objects.requireNonNull(playbackListener.get());
         @SuppressWarnings("unchecked")
         ListView<TurnRow> listView = robot.lookup("#turns").queryAs(ListView.class);
 
         robot.interact(() -> listener.positionChanged(Duration.ofSeconds(11))); // inside 1-Cue
         WaitForAsyncUtils.waitForFxEvents();
-        assertTrue(cellOf(robot, "1-Cue").getStyleClass().contains("playing"));
-        assertFalse(cellOf(robot, "1-1 [Key]").getStyleClass().contains("playing"));
+        assertTrue(cueCellOf(robot, 1).getStyleClass().contains("playing"));
+        assertFalse(cellOf(robot, "1-1").getStyleClass().contains("playing"));
 
         robot.interact(() -> listener.positionChanged(Duration.ofSeconds(13))); // inside 1-3
         WaitForAsyncUtils.waitForFxEvents();
         assertTrue(cellOf(robot, "1-3").getStyleClass().contains("playing"));
-        assertFalse(cellOf(robot, "1-Cue").getStyleClass().contains("playing"));
-        assertEquals("1-1 [Key]", listView.getSelectionModel().getSelectedItem().label());
+        assertFalse(cueCellOf(robot, 1).getStyleClass().contains("playing"));
+        assertEquals("1-1", listView.getSelectionModel().getSelectedItem().label());
     }
 
     @Test
@@ -427,6 +438,24 @@ class UnitViewTest {
         assertTrue(css.contains(".list-cell.playing"));
         assertTrue(css.contains("-color-success-emphasis"));
         assertTrue(css.contains("-color-success-muted"));
+    }
+
+    @Test
+    @DisplayName("Key sentence の行には鍵のアイコン（VPN_KEY）、Cue の行には吹き出しのアイコン（ANNOUNCEMENT）が graphic として付き、色はどちらも黒の 60%（rgba(0, 0, 0, 0.6)。薄い青では見えにくかった）。アイコンのフォントは正しく描けている Play ボタンのアイコンと同じ（色の指定で Ikonli のフォント指定が消えない）。Answer の行にはアイコンがない")
+    void key_and_cue_rows_have_role_icons_and_answer_rows_have_none(FxRobot robot) {
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+
+        var keyIcon = (FontIcon) cellOf(robot, "1-1").getGraphic();
+        var cueIcon = (FontIcon) cueCellOf(robot, 1).getGraphic();
+        assertEquals(Material2MZ.VPN_KEY, keyIcon.getIconCode());
+        assertEquals(Material2AL.ANNOUNCEMENT, cueIcon.getIconCode());
+        assertTrue(keyIcon.getStyle().contains("-fx-icon-color: rgba(0, 0, 0, 0.6)"));
+        assertTrue(cueIcon.getStyle().contains("-fx-icon-color: rgba(0, 0, 0, 0.6)"));
+        var iconFont = ((FontIcon) robot.lookup("#play").queryButton().getGraphic()).getFont();
+        assertEquals(iconFont.getFamily(), keyIcon.getFont().getFamily());
+        assertEquals(iconFont.getFamily(), cueIcon.getFont().getFamily());
+        assertNull(cellOf(robot, "1-3").getGraphic());
     }
 
     @Test

@@ -335,8 +335,8 @@ class UnitViewModelTest {
     }
 
     @Test
-    @DisplayName("ターン行の一覧は、ドリル一覧から「ドリル番号-ターン番号」の順に作られ、Key sentence には [Key] が付く。Cue の行は「ドリル番号-Cue」で、番号は Cue を飛ばして数える。5ドリル × 5ターンなら 1-1 [Key]、1-2 [Key]、1-Cue、1-3、1-4、2-1 [Key] … の25行")
-    void turn_rows_are_labeled_drill_number_dash_turn_number_with_key_for_key_sentences() {
+    @DisplayName("ターン行の一覧は、ドリル一覧から「ドリル番号-ターン番号」の順に作られる。Key sentence にも [Key] などの印は付けない（役割はアイコンで示す）。Cue の行はラベルなし（空文字。アイコンだけで示す）で、番号は Cue を飛ばして数える。5ドリル × 5ターンなら 1-1、1-2、（空）、1-3、1-4、2-1 … の25行")
+    void turn_rows_are_labeled_drill_number_dash_turn_number_without_a_key_mark() {
         var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run);
 
         viewModel.selectUnit(UNIT_1_1);
@@ -345,14 +345,13 @@ class UnitViewModelTest {
         var labels = viewModel.getTurnRows().stream().map(TurnRow::label).toList();
         assertEquals(25, labels.size());
         assertEquals(
-            List.of("1-1 [Key]", "1-2 [Key]", "1-Cue", "1-3", "1-4", "2-1 [Key]"),
-            labels.subList(0, 6)
+            List.of("1-1", "1-2", "", "1-3", "1-4", "2-1"), labels.subList(0, 6)
         );
         assertEquals("5-4", labels.getLast());
     }
 
     @Test
-    @DisplayName("Unit 1.1 型（Key の対が冒頭に1組だけ）のユニットを選ぶと、Key の対はドリル0になり、ターン行は 0-1 [Key]、0-2 [Key]、1-Cue、1-1、1-2、2-Cue … になる")
+    @DisplayName("Unit 1.1 型（Key の対が冒頭に1組だけ）のユニットを選ぶと、Key の対はドリル0になり、ターン行は 0-1、0-2、（Cue は空）、1-1、1-2、（空）… になる")
     void turn_rows_of_a_unit_with_one_key_pair_start_with_the_key_pair_as_drill_zero() {
         Function<AudioFile, List<Segment>> oneKeyPair = _ -> unitWithOneKeyPair();
         var viewModel = newViewModel(List.of(UNIT_1_1), oneKeyPair, Runnable::run);
@@ -363,7 +362,7 @@ class UnitViewModelTest {
         var labels = viewModel.getTurnRows().stream().map(TurnRow::label).toList();
         assertEquals(17, labels.size());
         assertEquals(
-            List.of("0-1 [Key]", "0-2 [Key]", "1-Cue", "1-1", "1-2", "2-Cue", "2-1", "2-2"),
+            List.of("0-1", "0-2", "", "1-1", "1-2", "", "2-1", "2-2"),
             labels.subList(0, 8)
         );
     }
@@ -396,7 +395,7 @@ class UnitViewModelTest {
 
         var labels = viewModel.getTurnRows().stream().map(TurnRow::label).toList();
         assertEquals(11, labels.size());
-        assertEquals(List.of("0-1", "1-Cue", "1-1"), labels.subList(0, 3));
+        assertEquals(List.of("0-1", "", "1-1"), labels.subList(0, 3));
         assertEquals("2-4", labels.getLast());
     }
 
