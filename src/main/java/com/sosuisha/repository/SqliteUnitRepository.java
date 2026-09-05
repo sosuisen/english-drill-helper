@@ -2,70 +2,34 @@ package com.sosuisha.repository;
 
 import static com.sosuisha.db.Tables.UNIT;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.exception.DataAccessException;
-import org.jooq.impl.DSL;
-import org.jspecify.annotations.Nullable;
 
 import com.sosuisha.domain.exception.RepositoryException;
 import com.sosuisha.domain.repository.UnitRepository;
 
 /**
- * Database of the app, stored in a SQLite file, accessed through jOOQ.
- * <p>
- * I/O errors are reported as runtime exceptions, in line with jOOQ, which
- * wraps every {@code SQLException} in its unchecked {@code DataAccessException}.
- * This class translates both into {@link RepositoryException} so that
- * callers see one exception type and jOOQ types do not leak out.
+ * Unit records stored in the SQLite file of the app, accessed through jOOQ
+ * (see {@link SqliteDatabase} for the error handling).
  */
 public class SqliteUnitRepository implements UnitRepository {
-    /** Default SQLite file, in the user home. */
-    public static final Path DEFAULT_FILE =
-        Path.of(System.getProperty("user.home"), ".english-drill-helper", "drill.db");
-
-    private static final String FILE_PROPERTY = "edh.drill.db";
-    private static final String SCHEMA_RESOURCE = "/db/schema.sql";
-
-    private final Path file;
-    private final String url;
+    private final SqliteDatabase database;
 
     /**
-     * Resolves the path of the SQLite database file. The system property
-     * {@code edh.drill.db} takes precedence over {@link #DEFAULT_FILE}.
-     *
-     * @return path of the SQLite database file
-     */
-    static Path resolveFile() {
-        var override = System.getProperty(FILE_PROPERTY);
-        if (override != null) { return Path.of(override); }
-        return DEFAULT_FILE;
-    }
-
-    /**
-     * Creates the database on the SQLite file resolved by {@link #resolveFile()}.
+     * Creates the repository on the SQLite file resolved by
+     * {@link SqliteDatabase#resolveFile()}.
      *
      * @throws RepositoryException if the parent folder cannot be created or the
      *             database cannot be opened
      */
     public SqliteUnitRepository() throws RepositoryException {
-        this(resolveFile());
+        this(SqliteDatabase.resolveFile());
     }
 
     /**
-     * Creates the database on the given SQLite file. The file, its parent
+     * Creates the repository on the given SQLite file. The file, its parent
      * folder, and the schema are created when they do not exist.
      *
      * @param file path of the SQLite database file
@@ -74,53 +38,7 @@ public class SqliteUnitRepository implements UnitRepository {
      *             database cannot be opened
      */
     public SqliteUnitRepository(Path file) throws RepositoryException {
-        Objects.requireNonNull(file, "file must not be null");
-        createParentFolder(file);
-        this.file = file;
-        this.url = "jdbc:sqlite:" + file;
-        createSchema();
-    }
-
-    private static void createParentFolder(Path file) {
-        var parent = file.getParent();
-        if (parent == null) { return; }
-        try {
-            Files.createDirectories(parent);
-        } catch (IOException e) {
-            throw new RepositoryException(
-                "Could not create the folder for the database: " + parent, e
-            );
-        }
-    }
-
-    private void createSchema() {
-        runWithDsl(
-            "Could not initialize the database", dsl -> dsl.execute(loadSchemaSql())
-        );
-    }
-
-    private static String loadSchemaSql() {
-        try (var in = SqliteUnitRepository.class.getResourceAsStream(SCHEMA_RESOURCE)) {
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RepositoryException("Could not read the schema of the database", e);
-        }
-    }
-
-    private <T extends @Nullable Object> T withDsl(
-        String errorMessage, Function<DSLContext, T> operation) {
-        try (var connection = DriverManager.getConnection(url)) {
-            return operation.apply(DSL.using(connection, SQLDialect.SQLITE));
-        } catch (SQLException | DataAccessException e) {
-            throw new RepositoryException(errorMessage + ": " + file, e);
-        }
-    }
-
-    private void runWithDsl(String errorMessage, Consumer<DSLContext> operation) {
-        this.<@Nullable Void>withDsl(errorMessage, dsl -> {
-            operation.accept(dsl);
-            return null;
-        });
+        this.database = new SqliteDatabase(Objects.requireNonNull(file, "file must not be null"));
     }
 
     /**
@@ -134,7 +52,7 @@ public class SqliteUnitRepository implements UnitRepository {
         throws RepositoryException {
         Objects.requireNonNull(fingerprint, "fingerprint must not be null");
         Objects.requireNonNull(playedAt, "playedAt must not be null");
-        runWithDsl("Could not write to the database", dsl -> {
+        database.run("Could not write to the database", dsl -> {
             var record = dsl.newRecord(UNIT);
             record.setFingerprint(fingerprint);
             record.setLastPlayedAt(playedAt.toEpochMilli());
@@ -151,7 +69,7 @@ public class SqliteUnitRepository implements UnitRepository {
     @Override
     public Optional<Instant> findLastPlayedAt(String fingerprint) throws RepositoryException {
         Objects.requireNonNull(fingerprint, "fingerprint must not be null");
-        return withDsl(
+        return database.query(
             "Could not read the database",
             dsl -> dsl.select(UNIT.LAST_PLAYED_AT)
                 .from(UNIT)

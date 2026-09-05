@@ -7,3 +7,12 @@ CREATE TABLE IF NOT EXISTS unit (
   fingerprint VARCHAR NOT NULL PRIMARY KEY,
   last_played_at BIGINT NOT NULL
 );
+-- Cache of the segments of a unit, in time order (see docs/plans.md). It can
+-- be rebuilt from the audio file, so it is not a record of the user.
+CREATE TABLE IF NOT EXISTS segment (
+  fingerprint VARCHAR NOT NULL,
+  position INTEGER NOT NULL,
+  duration_ms BIGINT NOT NULL,
+  kind VARCHAR NOT NULL,
+  PRIMARY KEY (fingerprint, position)
+);
