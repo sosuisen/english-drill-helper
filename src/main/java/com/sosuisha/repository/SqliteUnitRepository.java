@@ -2,7 +2,6 @@ package com.sosuisha.repository;
 
 import static com.sosuisha.db.Tables.UNIT;
 
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -18,27 +17,13 @@ public class SqliteUnitRepository implements UnitRepository {
     private final SqliteDatabase database;
 
     /**
-     * Creates the repository on the SQLite file resolved by
-     * {@link SqliteDatabase#resolveFile()}.
+     * Creates the repository on the database of the app.
      *
-     * @throws RepositoryException if the parent folder cannot be created or the
-     *             database cannot be opened
+     * @param database SQLite database of the app, shared by the repositories
+     * @throws NullPointerException if database is null
      */
-    public SqliteUnitRepository() throws RepositoryException {
-        this(SqliteDatabase.resolveFile());
-    }
-
-    /**
-     * Creates the repository on the given SQLite file. The file, its parent
-     * folder, and the schema are created when they do not exist.
-     *
-     * @param file path of the SQLite database file
-     * @throws NullPointerException if file is null
-     * @throws RepositoryException if the parent folder cannot be created or the
-     *             database cannot be opened
-     */
-    public SqliteUnitRepository(Path file) throws RepositoryException {
-        this.database = new SqliteDatabase(Objects.requireNonNull(file, "file must not be null"));
+    public SqliteUnitRepository(SqliteDatabase database) {
+        this.database = Objects.requireNonNull(database, "database must not be null");
     }
 
     /**

@@ -2,7 +2,6 @@ package com.sosuisha.repository;
 
 import static com.sosuisha.db.Tables.SEGMENT;
 
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -22,27 +21,13 @@ public class SqliteSegmentRepository implements SegmentRepository {
     private final SqliteDatabase database;
 
     /**
-     * Creates the cache on the SQLite file resolved by
-     * {@link SqliteDatabase#resolveFile()}.
+     * Creates the cache on the database of the app.
      *
-     * @throws RepositoryException if the parent folder cannot be created or the
-     *             database cannot be opened
+     * @param database SQLite database of the app, shared by the repositories
+     * @throws NullPointerException if database is null
      */
-    public SqliteSegmentRepository() throws RepositoryException {
-        this(SqliteDatabase.resolveFile());
-    }
-
-    /**
-     * Creates the cache on the given SQLite file. The file, its parent folder,
-     * and the schema are created when they do not exist.
-     *
-     * @param file path of the SQLite database file
-     * @throws NullPointerException if file is null
-     * @throws RepositoryException if the parent folder cannot be created or the
-     *             database cannot be opened
-     */
-    public SqliteSegmentRepository(Path file) throws RepositoryException {
-        this.database = new SqliteDatabase(Objects.requireNonNull(file, "file must not be null"));
+    public SqliteSegmentRepository(SqliteDatabase database) {
+        this.database = Objects.requireNonNull(database, "database must not be null");
     }
 
     /**

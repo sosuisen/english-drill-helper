@@ -26,7 +26,8 @@ class SqliteSegmentRepositoryTest {
     @DisplayName("指紋をキーにセグメントのリストを保存すると、同じ指紋で同じ順序のリストが読み出せる")
     void segments_saved_by_a_fingerprint_are_found_in_the_same_order_by_the_same_fingerprint(
         @TempDir Path folder) {
-        var repository = new SqliteSegmentRepository(folder.resolve("drill.db"));
+        var repository =
+            new SqliteSegmentRepository(new SqliteDatabase(folder.resolve("drill.db")));
 
         repository.saveSegments(FINGERPRINT, SEGMENTS);
 
@@ -37,7 +38,8 @@ class SqliteSegmentRepositoryTest {
     @DisplayName("保存していない指紋を探すと、空のOptionalになる。キャッシュがない状態を表す")
     void finding_by_a_fingerprint_without_saved_segments_gives_an_empty_optional(
         @TempDir Path folder) {
-        var repository = new SqliteSegmentRepository(folder.resolve("drill.db"));
+        var repository =
+            new SqliteSegmentRepository(new SqliteDatabase(folder.resolve("drill.db")));
 
         assertEquals(Optional.empty(), repository.findSegments(FINGERPRINT));
     }
@@ -45,7 +47,8 @@ class SqliteSegmentRepositoryTest {
     @Test
     @DisplayName("同じ指紋で保存し直すと、前のセグメントは消えて新しいリストに置き換わる。古い行は残らない")
     void saving_again_by_the_same_fingerprint_replaces_the_segments(@TempDir Path folder) {
-        var repository = new SqliteSegmentRepository(folder.resolve("drill.db"));
+        var repository =
+            new SqliteSegmentRepository(new SqliteDatabase(folder.resolve("drill.db")));
         repository.saveSegments(FINGERPRINT, SEGMENTS);
         var shorter = List.of(new Segment(Duration.ofMillis(6500), Segment.Kind.SOUND));
 

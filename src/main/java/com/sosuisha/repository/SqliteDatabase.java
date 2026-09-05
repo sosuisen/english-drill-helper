@@ -28,9 +28,9 @@ import com.sosuisha.domain.exception.RepositoryException;
  * This class translates both into {@link RepositoryException} so that
  * callers see one exception type and jOOQ types do not leak out.
  */
-class SqliteDatabase {
+public class SqliteDatabase {
     /** Default SQLite file, in the user home. */
-    static final Path DEFAULT_FILE =
+    public static final Path DEFAULT_FILE =
         Path.of(System.getProperty("user.home"), ".english-drill-helper", "drill.db");
 
     private static final String FILE_PROPERTY = "edh.drill.db";
@@ -45,7 +45,7 @@ class SqliteDatabase {
      *
      * @return path of the SQLite database file
      */
-    static Path resolveFile() {
+    public static Path resolveFile() {
         var override = System.getProperty(FILE_PROPERTY);
         if (override != null) { return Path.of(override); }
         return DEFAULT_FILE;
@@ -60,7 +60,7 @@ class SqliteDatabase {
      * @throws RepositoryException if the parent folder cannot be created or the
      *             database cannot be opened
      */
-    SqliteDatabase(Path file) throws RepositoryException {
+    public SqliteDatabase(Path file) throws RepositoryException {
         Objects.requireNonNull(file, "file must not be null");
         createParentFolder(file);
         this.file = file;

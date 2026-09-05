@@ -14,6 +14,7 @@ import com.sosuisha.service.UnitLoader;
 import com.sosuisha.service.JavaSoundAudioDecoder;
 import com.sosuisha.service.SegmentLoader;
 import com.sosuisha.service.SilenceDetector;
+import com.sosuisha.repository.SqliteDatabase;
 import com.sosuisha.repository.SqliteSegmentRepository;
 import com.sosuisha.domain.model.SilenceDetectionParameters;
 import com.sosuisha.service.FileSystemAudioFolderScanner;
@@ -53,13 +54,14 @@ public class App extends Application {
         });
         setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         var windowManager = new WindowManager();
-        var repository = new SqliteUnitRepository();
+        var database = new SqliteDatabase(SqliteDatabase.resolveFile());
+        var repository = new SqliteUnitRepository(database);
         var scanner = new FileSystemAudioFolderScanner(new Sha256Fingerprinter());
         var units = new UnitLoader(scanner, repository).load(AUDIO_FOLDER);
         var segmentLoader = new SegmentLoader(
             new JavaSoundAudioDecoder(),
             new SilenceDetector(SilenceDetectionParameters.DEFAULT),
-            new SqliteSegmentRepository()
+            new SqliteSegmentRepository(database)
         );
         var unitViewModel =
             new UnitViewModel(
