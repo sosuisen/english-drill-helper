@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import com.sosuisha.domain.model.AudioFile;
 import com.sosuisha.domain.model.Segment;
-import com.sosuisha.domain.model.SilenceDetectionParameters;
+import com.sosuisha.domain.model.SegmentDetectionParameters;
 import com.sosuisha.domain.repository.NullSegmentRepository;
 
 class SegmentLoaderTest {
@@ -25,8 +25,8 @@ class SegmentLoaderTest {
     );
 
     private final JavaSoundAudioDecoder decoder = new JavaSoundAudioDecoder();
-    private final SilenceDetector detector =
-        new SilenceDetector(SilenceDetectionParameters.DEFAULT);
+    private final SegmentDetector detector =
+        new SegmentDetector(SegmentDetectionParameters.DEFAULT);
 
     @Test
     @DisplayName("リポジトリにセグメントがあれば、それをそのまま返し、ファイルは読まない")

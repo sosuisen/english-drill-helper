@@ -16,7 +16,7 @@ import com.sosuisha.domain.repository.SegmentRepository;
  */
 public class SegmentLoader {
     private final JavaSoundAudioDecoder decoder;
-    private final SilenceDetector detector;
+    private final SegmentDetector detector;
     private final SegmentRepository repository;
 
     /**
@@ -28,7 +28,7 @@ public class SegmentLoader {
      * @throws NullPointerException if any argument is null
      */
     public SegmentLoader(
-        JavaSoundAudioDecoder decoder, SilenceDetector detector, SegmentRepository repository) {
+        JavaSoundAudioDecoder decoder, SegmentDetector detector, SegmentRepository repository) {
         this.decoder = Objects.requireNonNull(decoder, "decoder must not be null");
         this.detector = Objects.requireNonNull(detector, "detector must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");

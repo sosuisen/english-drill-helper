@@ -14,11 +14,11 @@ import java.util.Objects;
  * @param minSilenceDuration shortest run of silent windows that counts as
  *        silence, longer than zero
  */
-public record SilenceDetectionParameters(
+public record SegmentDetectionParameters(
     Duration windowWidth, double silenceThresholdDbfs, Duration minSilenceDuration) {
     /** The defaults decided in ADR 003 for drills with pauses for shadowing. */
-    public static final SilenceDetectionParameters DEFAULT =
-        new SilenceDetectionParameters(Duration.ofMillis(20), -45.0, Duration.ofSeconds(1));
+    public static final SegmentDetectionParameters DEFAULT =
+        new SegmentDetectionParameters(Duration.ofMillis(20), -45.0, Duration.ofSeconds(1));
 
     /**
      * Creates the parameters.
@@ -26,7 +26,7 @@ public record SilenceDetectionParameters(
      * @throws NullPointerException if windowWidth or minSilenceDuration is null
      * @throws IllegalArgumentException if windowWidth or minSilenceDuration is zero or negative
      */
-    public SilenceDetectionParameters {
+    public SegmentDetectionParameters {
         Objects.requireNonNull(windowWidth, "windowWidth must not be null");
         Objects.requireNonNull(minSilenceDuration, "minSilenceDuration must not be null");
         requirePositive(windowWidth, "windowWidth");

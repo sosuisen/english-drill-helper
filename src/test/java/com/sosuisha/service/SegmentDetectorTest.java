@@ -14,15 +14,15 @@ import org.junit.jupiter.api.Test;
 
 import com.sosuisha.domain.model.PcmAudio;
 import com.sosuisha.domain.model.Segment;
-import com.sosuisha.domain.model.SilenceDetectionParameters;
+import com.sosuisha.domain.model.SegmentDetectionParameters;
 
-class SilenceDetectorTest {
+class SegmentDetectorTest {
     // 合成PCMの仕様: 44.1kHz、モノラル。有音は振幅がフルスケールの半分（-6 dBFS）、無音はゼロ
     private static final int SAMPLE_RATE = 44100;
     private static final short HALF_OF_FULL_SCALE = 16384;
 
-    private final SilenceDetector detector =
-        new SilenceDetector(SilenceDetectionParameters.DEFAULT);
+    private final SegmentDetector detector =
+        new SegmentDetector(SegmentDetectionParameters.DEFAULT);
 
     @Test
     @DisplayName("全体が有音のPCM（3秒）は、区間長3秒の有音セグメント1つになる")
@@ -130,10 +130,10 @@ class SilenceDetectorTest {
     @DisplayName("音量がしきい値ちょうどのウィンドウは有音、それより小さいウィンドウは無音として扱う。しきい値の境界は「未満」である")
     void window_exactly_at_the_threshold_is_sound_and_a_quieter_window_is_silence() {
         var thresholdDbfs = Loudness.dbfsOf(constant(0.02, HALF_OF_FULL_SCALE));
-        var parameters = new SilenceDetectionParameters(
+        var parameters = new SegmentDetectionParameters(
             Duration.ofMillis(20), thresholdDbfs, Duration.ofSeconds(1)
         );
-        var detectorAtThreshold = new SilenceDetector(parameters);
+        var detectorAtThreshold = new SegmentDetector(parameters);
 
         var atThreshold = detectorAtThreshold.detect(pcm(constant(3.0, HALF_OF_FULL_SCALE)));
         var quieter =

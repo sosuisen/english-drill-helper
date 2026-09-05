@@ -8,19 +8,19 @@ import java.util.Objects;
 
 import com.sosuisha.domain.model.PcmAudio;
 import com.sosuisha.domain.model.Segment;
-import com.sosuisha.domain.model.SilenceDetectionParameters;
+import com.sosuisha.domain.model.SegmentDetectionParameters;
 
 /**
- * Splits PCM audio into sound and silence segments by the loudness of fixed
- * windows (see ADR 001 and ADR 003). The audio is cut into windows of the
+ * Splits PCM audio into sound and silence segments by detecting the silences
+ * with the loudness of fixed windows (see ADR 001 and ADR 003). The audio is cut into windows of the
  * window width; the last window may be shorter. A window whose loudness is
  * below the threshold is silent. A run of silent windows that lasts at least
  * the minimum silence is a silence segment; everything else is sound.
  */
-public class SilenceDetector {
+public class SegmentDetector {
     private static final long NANOS_PER_SECOND = 1_000_000_000L;
 
-    private final SilenceDetectionParameters parameters;
+    private final SegmentDetectionParameters parameters;
 
     /**
      * Creates the detector.
@@ -28,7 +28,7 @@ public class SilenceDetector {
      * @param parameters window width, silence threshold, and minimum silence
      * @throws NullPointerException if parameters is null
      */
-    public SilenceDetector(SilenceDetectionParameters parameters) {
+    public SegmentDetector(SegmentDetectionParameters parameters) {
         this.parameters = Objects.requireNonNull(parameters, "parameters must not be null");
     }
 

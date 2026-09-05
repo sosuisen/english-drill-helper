@@ -13,10 +13,10 @@ import com.sosuisha.presentation.screens.unit.UnitViewModel;
 import com.sosuisha.service.UnitLoader;
 import com.sosuisha.service.JavaSoundAudioDecoder;
 import com.sosuisha.service.SegmentLoader;
-import com.sosuisha.service.SilenceDetector;
+import com.sosuisha.service.SegmentDetector;
 import com.sosuisha.repository.SqliteDatabase;
 import com.sosuisha.repository.SqliteSegmentRepository;
-import com.sosuisha.domain.model.SilenceDetectionParameters;
+import com.sosuisha.domain.model.SegmentDetectionParameters;
 import com.sosuisha.service.FileSystemAudioFolderScanner;
 import com.sosuisha.repository.SqliteUnitRepository;
 import com.sosuisha.service.MediaAudioPlayer;
@@ -60,7 +60,7 @@ public class App extends Application {
         var units = new UnitLoader(scanner, repository).load(AUDIO_FOLDER);
         var segmentLoader = new SegmentLoader(
             new JavaSoundAudioDecoder(),
-            new SilenceDetector(SilenceDetectionParameters.DEFAULT),
+            new SegmentDetector(SegmentDetectionParameters.DEFAULT),
             new SqliteSegmentRepository(database)
         );
         var unitViewModel =
