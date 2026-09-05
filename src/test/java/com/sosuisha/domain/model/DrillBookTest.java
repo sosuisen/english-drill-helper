@@ -103,8 +103,8 @@ class DrillBookTest {
     }
 
     @Test
-    @DisplayName("Unit 1.1 型: Key の対がユニット冒頭に1組だけで、その後に (Cue・Answer・Answer) が5組の列は、5ドリルになり、ドリル1が Key・Key・Cue・Answer・Answer、ドリル2〜5が Cue・Answer・Answer である")
-    void a_unit_with_one_key_pair_has_one_drill_per_set_and_the_key_pair_in_the_first() {
+    @DisplayName("Unit 1.1 型: Key の対がユニット冒頭に1組だけで、その後に (Cue・Answer・Answer) が5組の列は、Key の対がドリル0になり、各組がドリル1〜5になる")
+    void a_unit_with_one_key_pair_has_the_pair_as_drill_zero_and_one_drill_per_set() {
         var sounds = new ArrayList<Double>(List.of(KEY, KEY));
         for (var s = 0; s < 5; s++) {
             sounds.addAll(List.of(CUE, ANSWER + s, ANSWER + s));
@@ -112,14 +112,12 @@ class DrillBookTest {
 
         var drills = DrillBook.drillsOf(sounds(sounds), REGULAR_UNIT);
 
+        assertEquals(List.of(0, 1, 2, 3, 4, 5), drills.stream().map(Drill::number).toList());
         assertEquals(
-            List.of(5, 3, 3, 3, 3), drills.stream().map(drill -> drill.turns().size()).toList()
+            List.of(2, 3, 3, 3, 3, 3), drills.stream().map(drill -> drill.turns().size()).toList()
         );
         assertEquals(
-            List.of(
-                Turn.Role.KEY_SENTENCE, Turn.Role.KEY_SENTENCE, Turn.Role.CUE, Turn.Role.ANSWER,
-                Turn.Role.ANSWER
-            ),
+            List.of(Turn.Role.KEY_SENTENCE, Turn.Role.KEY_SENTENCE),
             drills.get(0).turns().stream().map(Turn::role).toList()
         );
         assertEquals(
@@ -226,7 +224,7 @@ class DrillBookTest {
         var drills = DrillBook.drillsOf(layout(parts), REGULAR_UNIT);
 
         assertEquals(
-            List.of(5, 3, 3, 3, 3), drills.stream().map(drill -> drill.turns().size()).toList()
+            List.of(2, 3, 3, 3, 3, 3), drills.stream().map(drill -> drill.turns().size()).toList()
         );
         assertEquals(List.of(0, 1), drills.get(0).turns().get(0).segmentIndexes());
         assertEquals(List.of(2, 3), drills.get(0).turns().get(1).segmentIndexes());
@@ -323,9 +321,9 @@ class DrillBookTest {
         var drills = DrillBook.drillsOf(layout(parts), REGULAR_UNIT);
 
         assertEquals(
-            List.of(5, 3, 3, 3, 3), drills.stream().map(drill -> drill.turns().size()).toList()
+            List.of(2, 3, 3, 3, 3, 3), drills.stream().map(drill -> drill.turns().size()).toList()
         );
-        assertEquals(Turn.Role.CUE, drills.get(4).turns().get(0).role());
+        assertEquals(Turn.Role.CUE, drills.get(5).turns().get(0).role());
     }
 
     // --- builders ---

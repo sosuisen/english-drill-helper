@@ -130,16 +130,22 @@ public final class DrillBook {
     private static List<Drill> regularDrills(List<Candidate> turns) {
         var drills = groupByKeySentencePairs(turns);
         if (drills.size() == 1) {
-            drills = splitBySets(drills.getFirst());
+            var keyPairAndSets = splitBySets(drills.getFirst());
+            requireDrillCount(keyPairAndSets.size() - 1, turns);
+            return numbered(keyPairAndSets, 0);
         }
-        if (drills.size() != DRILLS_PER_UNIT) {
+        requireDrillCount(drills.size(), turns);
+        return numbered(drills, 1);
+    }
+
+    private static void requireDrillCount(int drillCount, List<Candidate> turns) {
+        if (drillCount != DRILLS_PER_UNIT) {
             throw new IrregularUnitException(
-                "The unit does not split into " + DRILLS_PER_UNIT + " drills: " + drills.size()
+                "The unit does not split into " + DRILLS_PER_UNIT + " drills: " + drillCount
                     + " drills from " + turns.size() + " turns",
                 null
             );
         }
-        return numbered(drills, 1);
     }
 
     /**
@@ -252,15 +258,15 @@ public final class DrillBook {
     }
 
     /**
-     * A unit with one key sentence pair at its start has one drill per set;
-     * the key sentences belong to the first drill.
+     * A unit with one key sentence pair at its start has one drill per set.
+     * The key sentences belong to no drill and become drill 0, the first
+     * list of the result.
      */
     private static List<List<RoledCandidate>> splitBySets(List<RoledCandidate> single) {
         var drills = new ArrayList<List<RoledCandidate>>();
         var current = new ArrayList<RoledCandidate>();
         for (var turn : single) {
-            if (turn.role() == Turn.Role.CUE && !current.isEmpty()
-                && current.getLast().role() != Turn.Role.KEY_SENTENCE) {
+            if (turn.role() == Turn.Role.CUE && !current.isEmpty()) {
                 drills.add(current);
                 current = new ArrayList<>();
             }
