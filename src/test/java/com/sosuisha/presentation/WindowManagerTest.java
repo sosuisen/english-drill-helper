@@ -50,8 +50,9 @@ class WindowManagerTest {
     }
 
     @Test
-    @DisplayName("showWindowすると、UnitViewのウィンドウが通常のタイトルバー付き（DECORATED）で表示される")
-    void show_window_displays_the_unit_view_window_with_the_decorated_style(FxRobot robot) {
+    @SuppressWarnings("deprecation") // StageStyle.EXTENDED is a preview feature of JavaFX 26.
+    @DisplayName("showWindowすると、UnitViewのウィンドウがViewの宣言するスタイル（EXTENDED）で表示される")
+    void show_window_displays_the_unit_view_window_with_the_style_the_view_declares(FxRobot robot) {
         var windowManager = new WindowManager();
         var view =
             new UnitView(
@@ -67,7 +68,7 @@ class WindowManagerTest {
         var window = (Stage) robot.window("English Drill Helper");
         assertTrue(window.isShowing());
         assertSame(view.getScene(), window.getScene());
-        assertEquals(StageStyle.DECORATED, window.getStyle());
+        assertEquals(StageStyle.EXTENDED, window.getStyle());
     }
 
     @Test

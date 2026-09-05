@@ -9,28 +9,39 @@ import org.kordamp.ikonli.material2.Material2MZ;
 import com.sosuisha.domain.model.Unit;
 import com.sosuisha.presentation.View;
 
+import atlantafx.base.controls.Card;
 import atlantafx.base.theme.Styles;
 import io.github.sosuisen.jfxbuilder.controls.ButtonBuilder;
 import io.github.sosuisen.jfxbuilder.controls.LabelBuilder;
 import io.github.sosuisen.jfxbuilder.controls.ListViewBuilder;
+import io.github.sosuisen.jfxbuilder.controls.TableColumnBuilder;
+import io.github.sosuisen.jfxbuilder.controls.TableViewBuilder;
 import io.github.sosuisen.jfxbuilder.graphics.HBoxBuilder;
 import io.github.sosuisen.jfxbuilder.graphics.SceneBuilder;
 import io.github.sosuisen.jfxbuilder.graphics.VBoxBuilder;
 import javafx.geometry.Insets;
+import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.skin.VirtualFlow;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.HeaderBar;
 import javafx.scene.layout.Priority;
+import javafx.stage.StageStyle;
 
 /**
  * View for the unit screen.
  */
 public class UnitView implements View {
     private static final String TITLE = "English Drill Helper";
-    private static final double WIDTH = 480;
+    private static final double WIDTH = 624;
     private static final double HEIGHT = 640;
+    private static final double LAST_PLAYED_COLUMN_WIDTH = 130;
     private static final String DRILL_START_CLASS = "drill-start";
     private static final String CUE_CLASS = "cue";
 
@@ -58,72 +69,116 @@ public class UnitView implements View {
         return TITLE;
     }
 
+    @Override
+    @SuppressWarnings("deprecation") // StageStyle.EXTENDED is a preview feature of JavaFX 26.
+    public StageStyle stageStyle() {
+        return StageStyle.EXTENDED;
+    }
+
+    // The header bar merges the title bar with the window and shows the app name.
+    @SuppressWarnings("deprecation") // HeaderBar is a preview feature of JavaFX 26 and has no
+                                     // builder API.
+    private static HeaderBar headerBar() {
+        var headerBar = new HeaderBar();
+        headerBar.setId("headerBar");
+        headerBar
+            .setLeft(LabelBuilder.create().text(TITLE).padding(new Insets(0, 0, 0, 10)).build());
+        return headerBar;
+    }
+
     private Scene buildSceneGraph() {
         return SceneBuilder
             .withRoot(
-                HBoxBuilder
+                VBoxBuilder
                     .withChildren(
-                        ListViewBuilder.<Unit>create()
-                            .id("units")
-                            .addStyleClass(Styles.DENSE)
-                            .addStyleClass(Styles.STRIPED)
-                            .items(viewModel.getUnits())
-                            .cellFactory(_ -> unitCell())
-                            .hGrowInHBox(Priority.ALWAYS)
-                            .apply(
-                                listView -> listView.getSelectionModel()
-                                    .selectedItemProperty()
-                                    .subscribe(viewModel::selectUnit)
-                            )
-                            .build(),
-                        VBoxBuilder
+                        headerBar(),
+                        HBoxBuilder
                             .withChildren(
-                                LabelBuilder.create()
-                                    .id("selectedUnitTitle")
-                                    .textPropertyApply(
-                                        text -> text.bind(viewModel.selectedUnitTitleProperty())
-                                    )
-                                    .build(),
-                                HBoxBuilder
-                                    .withChildren(
-                                        ButtonBuilder.create()
-                                            .id("play")
-                                            .graphic(new FontIcon(Material2MZ.PLAY_ARROW))
-                                            .addStyleClass(Styles.BUTTON_ICON)
-                                            .addStyleClass(Styles.ACCENT)
-                                            .onAction(_ -> viewModel.play())
-                                            .apply(this::disableWithoutSelection)
-                                            .build(),
-                                        ButtonBuilder.create()
-                                            .id("stop")
-                                            .graphic(new FontIcon(Material2MZ.STOP))
-                                            .addStyleClass(Styles.BUTTON_ICON)
-                                            .onAction(_ -> viewModel.stop())
-                                            .apply(this::disableWithoutSelection)
-                                            .build()
-                                    )
-                                    .spacing(10)
-                                    .build(),
-                                ListViewBuilder.<TurnRow>create()
-                                    .id("turns")
-                                    .addStyleClass(Styles.DENSE)
-                                    .addStyleClass(Styles.STRIPED)
-                                    .items(viewModel.getTurnRows())
-                                    .cellFactory(_ -> turnCell())
-                                    .vGrowInVBox(Priority.ALWAYS)
-                                    .apply(listView -> followPlayingTurn(listView))
-                                    .build()
+                                card(
+                                    "unitPane",
+                                    TableViewBuilder.<Unit>create()
+                                        .id("units")
+                                        .addStyleClass(Styles.DENSE)
+                                        .addStyleClass(Styles.STRIPED)
+                                        .items(viewModel.getUnits())
+                                        .addColumns(fileColumn(), lastPlayedColumn())
+                                        .columnResizePolicy(
+                                            TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS
+                                        )
+                                        .apply(
+                                            table -> table.getSelectionModel()
+                                                .selectedItemProperty()
+                                                .subscribe(viewModel::selectUnit)
+                                        )
+                                        .build()
+                                ),
+                                card(
+                                    "drillPane",
+                                    VBoxBuilder
+                                        .withChildren(
+                                            LabelBuilder.create()
+                                                .id("selectedUnitTitle")
+                                                .addStyleClass(Styles.TITLE_3)
+                                                .textPropertyApply(
+                                                    text -> text
+                                                        .bind(viewModel.selectedUnitTitleProperty())
+                                                )
+                                                .build(),
+                                            HBoxBuilder
+                                                .withChildren(
+                                                    ButtonBuilder.create()
+                                                        .id("play")
+                                                        .graphic(
+                                                            new FontIcon(Material2MZ.PLAY_ARROW)
+                                                        )
+                                                        .addStyleClass(Styles.BUTTON_ICON)
+                                                        .addStyleClass(Styles.ACCENT)
+                                                        .onAction(_ -> viewModel.play())
+                                                        .apply(this::disableWithoutSelection)
+                                                        .build(),
+                                                    ButtonBuilder.create()
+                                                        .id("stop")
+                                                        .graphic(new FontIcon(Material2MZ.STOP))
+                                                        .addStyleClass(Styles.BUTTON_ICON)
+                                                        .onAction(_ -> viewModel.stop())
+                                                        .apply(this::disableWithoutSelection)
+                                                        .build()
+                                                )
+                                                .spacing(10)
+                                                .build(),
+                                            ListViewBuilder.<TurnRow>create()
+                                                .id("turns")
+                                                .addStyleClass(Styles.DENSE)
+                                                .addStyleClass(Styles.STRIPED)
+                                                .items(viewModel.getTurnRows())
+                                                .cellFactory(_ -> turnCell())
+                                                .vGrowInVBox(Priority.ALWAYS)
+                                                .apply(listView -> followPlayingTurn(listView))
+                                                .build()
+                                        )
+                                        .spacing(10)
+                                        .build()
+                                )
                             )
                             .spacing(10)
+                            .padding(new Insets(15))
+                            .vGrowInVBox(Priority.ALWAYS)
                             .build()
                     )
-                    .spacing(10)
-                    .padding(new Insets(15))
                     .build()
             )
             .width(WIDTH)
             .height(HEIGHT)
             .build();
+    }
+
+    // Each pane is a card so that the two lists read as separate blocks.
+    private static Card card(String id, Node body) {
+        var card = new Card();
+        card.setId(id);
+        card.setBody(body);
+        HBox.setHgrow(card, Priority.ALWAYS);
+        return card;
     }
 
     // Playing and stopping make sense only while a unit is selected.
@@ -189,18 +244,21 @@ public class UnitView implements View {
         return cell;
     }
 
-    private ListCell<Unit> unitCell() {
-        return new ListCell<>() {
-            @Override
-            protected void updateItem(@Nullable Unit item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item == null || empty ? null : cellTextOf(item));
-            }
-        };
+    private static TableColumn<Unit, String> fileColumn() {
+        return TableColumnBuilder.<Unit, String>create("File")
+            .cellValueFactory(row -> new ReadOnlyStringWrapper(row.getValue().fileName()))
+            .build();
     }
 
-    private String cellTextOf(Unit unit) {
-        var lastPlayedAt = viewModel.lastPlayedAtTextOf(unit);
-        return lastPlayedAt.isEmpty() ? unit.fileName() : unit.fileName() + "  " + lastPlayedAt;
+    // The date and time take a fixed width; the file name gets the rest.
+    private TableColumn<Unit, String> lastPlayedColumn() {
+        return TableColumnBuilder.<Unit, String>create("Last played")
+            .cellValueFactory(
+                row -> new ReadOnlyStringWrapper(viewModel.lastPlayedAtTextOf(row.getValue()))
+            )
+            .minWidth(LAST_PLAYED_COLUMN_WIDTH)
+            .prefWidth(LAST_PLAYED_COLUMN_WIDTH)
+            .maxWidth(LAST_PLAYED_COLUMN_WIDTH)
+            .build();
     }
 }

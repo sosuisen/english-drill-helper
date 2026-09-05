@@ -37,10 +37,14 @@ import com.sosuisha.domain.repository.NullUnitRepository;
 import com.sosuisha.domain.service.NullAudioPlayer;
 import com.sosuisha.domain.service.PlaybackListener;
 
+import atlantafx.base.controls.Card;
 import atlantafx.base.theme.Styles;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 @ExtendWith(ApplicationExtension.class)
 class UnitViewTest {
@@ -93,18 +97,41 @@ class UnitViewTest {
     }
 
     @Test
-    @DisplayName("画面に音声ファイルの一覧が表示される")
-    void the_screen_shows_the_list_of_audio_files(FxRobot robot) {
+    @DisplayName("画面のユニット一覧は TableView で、ViewModel のユニット一覧に接続されている")
+    void the_unit_list_is_a_table_bound_to_the_units_of_the_view_model(FxRobot robot) {
         @SuppressWarnings("unchecked")
-        ListView<Unit> listView = robot.lookup("#units").queryAs(ListView.class);
+        TableView<Unit> table = robot.lookup("#units").queryAs(TableView.class);
 
-        assertEquals(viewModel.getUnits(), listView.getItems());
+        assertEquals(viewModel.getUnits(), table.getItems());
     }
 
     @Test
-    @DisplayName("再生済みのユニットのセルには、ファイル名と最終再生日時が表示される")
-    void the_cell_of_a_played_unit_shows_the_file_name_and_the_last_played_at(FxRobot robot) {
-        assertTrue(robot.lookup("013_Unit 1.3.mp3  2026-09-05 10:00").tryQuery().isPresent());
+    @DisplayName("ユニット一覧の列は File と Last played の2列で、再生済みのユニットの行には File 列にファイル名、Last played 列に最終再生日時（yyyy-MM-dd HH:mm）が表示される")
+    void the_table_has_a_file_column_and_a_last_played_column(FxRobot robot) {
+        @SuppressWarnings("unchecked")
+        TableView<Unit> table = robot.lookup("#units").queryAs(TableView.class);
+
+        assertEquals(
+            List.of("File", "Last played"),
+            table.getColumns().stream().map(TableColumn::getText).toList()
+        );
+        assertTrue(robot.lookup("013_Unit 1.3.mp3").tryQuery().isPresent());
+        assertTrue(robot.lookup("2026-09-05 10:00").tryQuery().isPresent());
+    }
+
+    @Test
+    @DisplayName("ユニット一覧の File 列は残りの幅を使い、Last played 列は日時が収まる固定幅（130px）である")
+    void the_file_column_takes_the_remaining_width_and_the_last_played_column_is_fixed(
+        FxRobot robot) {
+        @SuppressWarnings("unchecked")
+        TableView<Unit> table = robot.lookup("#units").queryAs(TableView.class);
+        var lastPlayed = table.getColumns().get(1);
+
+        assertEquals(130, lastPlayed.getMinWidth());
+        assertEquals(130, lastPlayed.getMaxWidth());
+        assertEquals(
+            TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS, table.getColumnResizePolicy()
+        );
     }
 
     @Test
@@ -264,6 +291,49 @@ class UnitViewTest {
 
         assertFalse(play.isDisabled());
         assertFalse(stop.isDisabled());
+    }
+
+    @Test
+    @DisplayName("ウィンドウの既定の幅は 624px（元の 480px の3割増し）である。高さはテストの準備で縮めているので確かめない")
+    void the_default_window_is_624_wide(FxRobot robot) {
+        var scene = robot.lookup("#units").query().getScene();
+
+        assertEquals(624, scene.getWidth());
+    }
+
+    @Test
+    @DisplayName("選択中のユニット名のラベルは、見出しとして AtlantaFX の TITLE_3 のスタイルを持つ")
+    void the_selected_unit_title_is_styled_as_a_heading(FxRobot robot) {
+        assertTrue(
+            robot.lookup("#selectedUnitTitle").query().getStyleClass().contains(Styles.TITLE_3)
+        );
+    }
+
+    @Test
+    @DisplayName("ユニット一覧を含む左ペイン（unitPane）と、見出し・ボタン・ターン一覧を含む右ペイン（drillPane）は AtlantaFX の Card である")
+    void the_left_and_right_panes_are_cards(FxRobot robot) {
+        var unitPane = robot.lookup("#unitPane").queryAs(Card.class);
+        var drillPane = robot.lookup("#drillPane").queryAs(Card.class);
+
+        assertTrue(unitPane.lookupAll("#units").size() == 1);
+        assertTrue(drillPane.lookupAll("#turns").size() == 1);
+        assertTrue(drillPane.lookupAll("#selectedUnitTitle").size() == 1);
+        assertTrue(drillPane.lookupAll("#play").size() == 1);
+    }
+
+    @Test
+    @SuppressWarnings("deprecation") // StageStyle.EXTENDED is a preview feature of JavaFX 26.
+    @DisplayName("UnitView は HeaderBar を持つので、ウィンドウのスタイルとして EXTENDED（タイトルバーと一体のメニューバー拡張）を宣言する")
+    void the_unit_view_declares_the_extended_stage_style() {
+        assertEquals(StageStyle.EXTENDED, new UnitView(viewModel).stageStyle());
+    }
+
+    @Test
+    @DisplayName("画面の上部に HeaderBar があり、その中にアプリ名「English Drill Helper」が表示される")
+    void the_screen_has_a_header_bar_with_the_app_name(FxRobot robot) {
+        var headerBar = robot.lookup("#headerBar").query();
+
+        assertTrue(robot.from(headerBar).lookup("English Drill Helper").tryQuery().isPresent());
     }
 
     @Test
