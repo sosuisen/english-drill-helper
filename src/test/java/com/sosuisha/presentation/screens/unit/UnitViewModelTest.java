@@ -513,6 +513,45 @@ class UnitViewModelTest {
         return result;
     }
 
+    @Test
+    @DisplayName("再生中に別のユニットを選ぶと、再生が停止する")
+    void selecting_another_unit_while_playing_stops_the_playback() {
+        var stopped = new AtomicBoolean(false);
+        var player = new NullAudioPlayer() {
+            @Override
+            public void stop() {
+                stopped.set(true);
+            }
+        };
+        var viewModel =
+            newViewModel(List.of(UNIT_1_1, UNIT_1_2), SEGMENT_TABLE, Runnable::run, player);
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.play();
+
+        viewModel.selectUnit(UNIT_1_2);
+
+        assertTrue(stopped.get());
+    }
+
+    @Test
+    @DisplayName("再生中に別のユニットを選ぶと、再生中のターン行は空になる")
+    void selecting_another_unit_while_playing_clears_the_playing_turn_row() {
+        var listener = new AtomicReference<@Nullable PlaybackListener>();
+        var viewModel = newViewModel(
+            List.of(UNIT_1_1, UNIT_1_2), SEGMENT_TABLE, Runnable::run,
+            listenerCapturingPlayer(listener)
+        );
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.play();
+        Objects.requireNonNull(listener.get()).positionChanged(Duration.ofMillis(11_000));
+
+        viewModel.selectUnit(UNIT_1_2);
+
+        assertEquals(Optional.empty(), viewModel.playingTurnRowProperty().get());
+    }
+
     /** What a player was asked to play: the file and the start position. */
     private record Playback(Path file, Duration start) {
     }

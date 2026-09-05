@@ -183,13 +183,15 @@ public class UnitViewModel {
 
     /**
      * Selects a unit and starts loading its segments in the background. The
-     * segment list is emptied at once and filled when the loading is done.
+     * playback of the unit selected before is stopped, and the segment list
+     * is emptied at once and filled when the loading is done.
      * When the loading fails, the exception is rethrown on the FX thread and
      * reaches the uncaught exception handler of the application.
      *
      * @param unit unit to select, or null to clear the selection
      */
     public void selectUnit(@Nullable Unit unit) {
+        player.stop(); // the playback belongs to the unit that was selected
         selectedUnit.set(Optional.ofNullable(unit));
         segments.clear();
         if (unit != null) {
