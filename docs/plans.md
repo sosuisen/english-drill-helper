@@ -24,7 +24,7 @@ TDDの作業用todo。使い捨て。
 - [x] Cue の灰色をもっと薄くする（-color-fg-muted → -color-fg-subtle）
 - [x] ドリルの区切り（上線）を緑色にする（-color-success-emphasis）
 - [ ] ユニットリストを ListView から TableView にする（列の構成はテストリストで決める）
-- [ ] Play と Stop のボタンをアイコンにする（アイコンの出し方はユーザーと相談: Ikonli の依存を足すか、Unicode 記号にするか）
+- [x] Play と Stop のボタンをアイコンにする（Ikonli 12.4.0、Material 2）
 - [x] Cue の灰色をさらに薄くする: derive(-color-fg-subtle, 70%)（実機で確認して決定）
 - [x] ドリルの区切りの上線を 2px、薄い青（-color-accent-muted）にする
 - [x] Cue の文字色を上線と同じ -color-accent-muted にする
@@ -34,3 +34,11 @@ TDDの作業用todo。使い捨て。
   - テストリスト
     - [x] アイコン画像を src/main/resources/images/icon.png に置き、ウィンドウを表示するとステージのアイコンにその画像が設定されていることを確かめる（WindowManager.showWindow）
     - [x] jpackage の配布物のアイコンにも使う。images/icon.ico（ffmpeg で PNG から変換）、images/icon.icns（ユーザー提供）、Linux は icon.png。pom.xml の OS 別プロファイルで jpackage.icon プロパティに指定
+  - 決定: アイコンパックは Material 2（ikonli-material2-pack 12.4.0）。Play は PLAY_ARROW、Stop は STOP
+  - テストリスト
+    - [x] Play ボタンと Stop ボタンは文字ではなくアイコン（Ikonli の FontIcon、Material 2 の PLAY_ARROW と STOP）を持ち、AtlantaFX のアイコンボタンのスタイル（BUTTON_ICON）である。既存のクリックのテスト（#play、#stop）が通ることも確かめる
+- [ ] 選択中ファイルの表示欄では、冒頭の「ddd_」と末尾の「.mp3」を除いた名前（例: Unit 1.1_slow）を表示する
+  - テストリスト
+    - [ ] Unit.title() は、ファイル名の先頭の「数字_」と末尾の拡張子を除いた名前を返す。011_Unit 1.1_slow.mp3 → Unit 1.1_slow、001_Unit 0.1.mp3 → Unit 0.1。番号や拡張子がないファイル名はそのまま
+    - [ ] ViewModel の選択中の表示は、ファイル名ではなくユニットの表示名（title）になる。未選択なら空
+    - [ ] View の表示欄（ラベル）に表示名が出る
