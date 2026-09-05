@@ -14,22 +14,22 @@ TDDの作業用todo。使い捨て。
 
 # 画面の調整
 
-- [x] ユニットリストを ListView から TableView にする。列は File（ファイル名）と Last played（最終再生日時）の2列（決定）
+- [ ] 見栄え2: ターン行の役割をアイコンで示す。[Key] の代わりに鍵のアイコン、Cue の代わりに耳や吹き出しのアイコン（Material 2）。文字より目で追いやすくする
+- [ ] 見栄え3: 再生中の行を、選択色ではなく Nord の青系アクセントで左端にバーを付けるなどして強調し、再生位置が一目で分かるようにする
+- [ ] 見栄え4: Play/Stop の横に「01:23 / 03:10」の経過時間ラベルを置いて再生位置を表示する（決定: ラベルのみ。プログレスバーは付けない）
+  - 設計案: ViewModel が再生位置の文字列（positionText）を公開する。形式は「mm:ss / mm:ss」で、前が再生位置、後がユニット全体の長さ（セグメント列の末尾の終了時刻）。未選択なら空、選択直後は「00:00 / 総時間」。再生位置は PlaybackListener の positionChanged で更新する
   - テストリスト
-    - [x] View の ID units は TableView で、items が ViewModel のユニット一覧に接続されている（ListView のテストの置き換え）
-    - [x] 列は File と Last played の2列で、File 列にファイル名、Last played 列に最終再生日時（yyyy-MM-dd HH:mm、未再生は空）が表示される（セルのテストの置き換え）
-    - [x] 行をクリックすると、そのユニットが選択される（既存のクリックのテストが通る）
-    - [x] dense と striped のスタイルは TableView にも付く（既存のスタイルのテストが通る）
-    - [x] File 列は残りの幅を使い、Last played 列は日時が収まる固定幅にする（列幅の方針。重要なデザイン上の決定なのでテストを残す）
-- [x] 見栄え良くするアイデアを出す。採用: 1（ユニット名を見出しに）、5（左右のペインを Card に）、8（Windows のメニューバー拡張）を先に、2（役割のアイコン）、3（再生中の行の強調）、4（再生位置の表示）を後に。除外: 6（相対時刻）、7（進捗のチェック列）、9（Nord Dark 切り替え）
-- [x] 見栄え1: 選択中のユニット名を大きめの見出し（AtlantaFX の TITLE_3）にし、その下に Play/Stop を並べる
-  - [x] View: ユニット名のラベルに TITLE_3 のスタイルが付いていることを確かめる
-- [x] 見栄え5: 左右のペインを AtlantaFX の Card にして余白を揃える
-  - [x] View: ユニット一覧を含む左ペイン（ID unitPane）と、見出し・ボタン・ターン一覧を含む右ペイン（ID drillPane）が Card であることを確かめる
-- [x] Windows のメニューバー拡張（JavaFX のプレビュー機能 StageStyle.EXTENDED と HeaderBar）を使う。参考: sss-music-player プロジェクト。-Djavafx.enablePreview=true を surefire、javafx-maven-plugin、jpackage の3箇所に書く（JavaFX-MVVM.md）
+    - [ ] ViewModel: ユニットを選ぶと、位置の文字列が「00:00 / 総時間」になる（5組の合成セグメント = 55.0秒なら「00:00 / 00:55」）。総時間がセグメント列の末尾から求まることを確かめる
+    - [ ] ViewModel: 再生位置が通知されると、前半がその位置（例: 83秒 → 01:23）になる。秒は切り捨て
+    - [ ] ViewModel: 選択を外すと、位置の文字列は空になる
+    - [ ] View: Play/Stop の並びの右に位置のラベル（ID position）があり、ViewModel の位置の文字列に接続されている
+- [x] Card と中のリストの間の余白をなくす。Card の内側の余白（CSS の 1em / 0.75em）を、画面のスタイルシート（styles/unit.css）の flush クラスで 0 にし、右ペインの見出しとボタンにだけ余白を持たせる。外側の HBox の余白は 15 → 8
   - テストリスト
-    - [x] UnitView は stageStyle() で EXTENDED を宣言する（WindowManager がその様式でウィンドウを開く既存の仕組みを使う）
-    - [x] 画面の上部に HeaderBar（ID headerBar）があり、その中にアプリ名「English Drill Helper」が表示される
-    - [x] WindowManagerTest の期待を DECORATED から EXTENDED に変える
-    - [x] -Djavafx.enablePreview=true を surefire、javafx-maven-plugin、jpackage の3箇所に書き、README にプレビュー機能の注意を書く（準備・文書）
-- [x] アプリの既定のウィンドウ幅を3割大きくする（480 → 624）
+    - [x] View: 左右の Card に flush スタイルが付き、画面の Scene に styles/unit.css が読み込まれていることを確かめる
+- [x] 現在開いているフォルダのパスをユニット一覧の Card の header に、現在開いているユニットの表示名を drillPane の Card の header に出す（Card の header を使うので Card は続ける）
+  - テストリスト
+    - [x] ViewModel は音声フォルダのパスをコンストラクタで受け取り、表示用の文字列として公開する
+    - [x] View: unitPane の header にフォルダのパスが表示される
+    - [x] View: drillPane の header に選択中ユニットの表示名（ID selectedUnitTitle、TITLE_3）が表示され、body には Play/Stop とターン一覧が残る
+- [x] 再生ボタンの左側の余白を戻す（Card の body を flush にしたためボタンが枠に付いた）。Play/Stop の並び（ID playback）に左右 8px の余白を付ける
+- [x] unitPane の header（音声フォルダのパス）にも AtlantaFX のスタイルを適用して、drillPane の見出しと揃える。決定: 見出しと同じ TITLE_3
