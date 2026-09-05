@@ -11,6 +11,7 @@ import com.sosuisha.domain.service.PlaybackListener;
 
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
+import javafx.util.Subscription;
 
 /**
  * Audio player backed by JavaFX Media. Starting a file stops the file that
@@ -19,6 +20,7 @@ import javafx.scene.media.MediaPlayer;
  */
 public class MediaAudioPlayer implements AudioPlayer {
     private @Nullable MediaPlayer current;
+    private @Nullable Subscription positions;
 
     @Override
     public void play(Path file, Duration start, PlaybackListener listener) {
@@ -28,7 +30,7 @@ public class MediaAudioPlayer implements AudioPlayer {
         disposeCurrent();
         var player = new MediaPlayer(new Media(file.toUri().toString()));
         player.setStartTime(javafx.util.Duration.millis(start.toMillis()));
-        player.currentTimeProperty()
+        positions = player.currentTimeProperty()
             .subscribe(time -> listener.positionChanged(Duration.ofMillis((long) time.toMillis())));
         player.setOnEndOfMedia(listener::stopped);
         player.setOnStopped(listener::stopped);
@@ -53,11 +55,22 @@ public class MediaAudioPlayer implements AudioPlayer {
     @Override
     public void stop() {
         if (current != null) {
+            // MediaPlayer.stop() moves the position back to the start time. That position
+            // does not belong to the playback, so the positions are no longer reported.
+            stopReportingPositions();
             current.stop();
         }
     }
 
+    private void stopReportingPositions() {
+        if (positions != null) {
+            positions.unsubscribe();
+            positions = null;
+        }
+    }
+
     private void disposeCurrent() {
+        stopReportingPositions();
         if (current != null) {
             current.dispose();
             current = null;
