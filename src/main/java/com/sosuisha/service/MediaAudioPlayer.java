@@ -37,6 +37,20 @@ public class MediaAudioPlayer implements AudioPlayer {
     }
 
     @Override
+    public void pause() {
+        if (current != null) {
+            current.pause();
+        }
+    }
+
+    @Override
+    public void resume() {
+        if (current != null && current.getStatus() == MediaPlayer.Status.PAUSED) {
+            current.play();
+        }
+    }
+
+    @Override
     public void stop() {
         if (current != null) {
             current.stop();

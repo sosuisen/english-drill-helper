@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -102,6 +103,182 @@ class UnitViewModelTest {
         viewModel.play();
 
         assertEquals(UNIT_1_1.audioFile().path(), playedFile.get());
+    }
+
+    @Test
+    @DisplayName("停止中に playOrPause() すると、選択中ユニットの再生が始まり、再生状態は PLAYING になる")
+    void play_or_pause_while_stopped_starts_the_playback_and_the_state_is_playing() {
+        var playedFile = new AtomicReference<@Nullable Path>();
+        var viewModel = newViewModel(List.of(UNIT_1_1), recordingPlayer(playedFile));
+        viewModel.selectUnit(UNIT_1_1);
+
+        viewModel.playOrPause();
+
+        assertEquals(UNIT_1_1.audioFile().path(), playedFile.get());
+        assertEquals(PlaybackState.PLAYING, viewModel.playbackStateProperty().get());
+    }
+
+    @Test
+    @DisplayName("再生中に playOrPause() すると、プレイヤーの pause() が呼ばれて再生状態は PAUSED になり、再生位置の表示と再生中のターン行はそのまま残る")
+    void play_or_pause_while_playing_pauses_the_player_and_keeps_the_position_and_the_row() {
+        var listener = new AtomicReference<@Nullable PlaybackListener>();
+        var paused = new AtomicBoolean(false);
+        var player = new NullAudioPlayer() {
+            @Override
+            public void play(Path file, Duration start, PlaybackListener l) {
+                listener.set(l);
+            }
+
+            @Override
+            public void pause() {
+                paused.set(true);
+            }
+        };
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, player);
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.playOrPause();
+        Objects.requireNonNull(listener.get()).positionChanged(Duration.ofMillis(11_000));
+        var positionText = viewModel.positionTextProperty().get();
+        var playingRow = viewModel.playingTurnRowProperty().get();
+
+        viewModel.playOrPause();
+
+        assertTrue(paused.get());
+        assertEquals(PlaybackState.PAUSED, viewModel.playbackStateProperty().get());
+        assertEquals(positionText, viewModel.positionTextProperty().get());
+        assertEquals(playingRow, viewModel.playingTurnRowProperty().get());
+    }
+
+    @Test
+    @DisplayName("一時停止中に playOrPause() すると、プレイヤーの resume() が呼ばれ、再生状態は PLAYING に戻る。play() は呼び直されない")
+    void play_or_pause_while_paused_resumes_the_player_and_the_state_is_playing() {
+        var playCount = new AtomicInteger();
+        var resumed = new AtomicBoolean(false);
+        var player = new NullAudioPlayer() {
+            @Override
+            public void play(Path file, Duration start, PlaybackListener listener) {
+                playCount.incrementAndGet();
+            }
+
+            @Override
+            public void resume() {
+                resumed.set(true);
+            }
+        };
+        var viewModel = newViewModel(List.of(UNIT_1_1), player);
+        viewModel.selectUnit(UNIT_1_1);
+        viewModel.playOrPause();
+        viewModel.playOrPause(); // pauses
+
+        viewModel.playOrPause();
+
+        assertTrue(resumed.get());
+        assertEquals(PlaybackState.PLAYING, viewModel.playbackStateProperty().get());
+        assertEquals(1, playCount.get());
+    }
+
+    @Test
+    @DisplayName("一時停止中に stop() すると、プレイヤーの stop() が呼ばれて再生状態は STOPPED になり、停止時刻は今までどおりプレイヤーからの停止の通知で記録される")
+    void stopping_while_paused_stops_the_player_and_records_the_stop_time() {
+        var listener = new AtomicReference<@Nullable PlaybackListener>();
+        var stopped = new AtomicBoolean(false);
+        var player = new NullAudioPlayer() {
+            @Override
+            public void play(Path file, Duration start, PlaybackListener l) {
+                listener.set(l);
+            }
+
+            @Override
+            public void stop() {
+                stopped.set(true);
+                var playing = listener.get();
+                if (playing != null) {
+                    playing.stopped();
+                } // as the real player does
+            }
+        };
+        var savedPlayedAt = new AtomicReference<@Nullable Instant>();
+        var repository = new NullUnitRepository() {
+            @Override
+            public void saveLastPlayedAt(String fingerprint, Instant playedAt) {
+                savedPlayedAt.set(playedAt);
+            }
+        };
+        var stoppedAt = Instant.parse("2026-09-05T10:00:00Z");
+        var viewModel = new UnitViewModel(
+            List.of(UNIT_1_1), AUDIO_FOLDER, player, repository,
+            Clock.fixed(stoppedAt, ZoneOffset.UTC), NO_SEGMENTS, Runnable::run
+        );
+        viewModel.selectUnit(UNIT_1_1);
+        viewModel.playOrPause();
+        viewModel.playOrPause(); // pauses
+
+        viewModel.stop();
+
+        assertTrue(stopped.get());
+        assertEquals(PlaybackState.STOPPED, viewModel.playbackStateProperty().get());
+        assertEquals(stoppedAt, savedPlayedAt.get());
+    }
+
+    @Test
+    @DisplayName("再生がファイルの末尾に達してプレイヤーから停止が通知されると、再生状態は STOPPED になる")
+    void the_state_is_stopped_when_the_player_reports_the_stop_at_the_end_of_the_file() {
+        var listener = new AtomicReference<@Nullable PlaybackListener>();
+        var viewModel = newViewModel(List.of(UNIT_1_1), listenerCapturingPlayer(listener));
+        viewModel.selectUnit(UNIT_1_1);
+        viewModel.playOrPause();
+
+        Objects.requireNonNull(listener.get()).stopped();
+
+        assertEquals(PlaybackState.STOPPED, viewModel.playbackStateProperty().get());
+    }
+
+    @Test
+    @DisplayName("一時停止中にターンをクリックすると、そのターンの開始位置から再生が始まり（play が呼び直される）、再生状態は PLAYING になる")
+    void playing_a_turn_while_paused_plays_from_the_turn_and_the_state_is_playing() {
+        var playedStart = new AtomicReference<@Nullable Duration>();
+        var playCount = new AtomicInteger();
+        var player = new NullAudioPlayer() {
+            @Override
+            public void play(Path file, Duration start, PlaybackListener listener) {
+                playedStart.set(start);
+                playCount.incrementAndGet();
+            }
+        };
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, player);
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.playOrPause();
+        viewModel.playOrPause(); // pauses
+
+        viewModel.playTurn(viewModel.getTurnRows().get(2)); // the cue of drill 1 starts at 10 s
+
+        assertEquals(2, playCount.get());
+        assertEquals(Duration.ofSeconds(10), playedStart.get());
+        assertEquals(PlaybackState.PLAYING, viewModel.playbackStateProperty().get());
+    }
+
+    @Test
+    @DisplayName("一時停止中に別のユニットを選ぶと、プレイヤーが停止し、再生状態は STOPPED になる")
+    void selecting_another_unit_while_paused_stops_the_player() {
+        var stopped = new AtomicBoolean(false);
+        var player = new NullAudioPlayer() {
+            @Override
+            public void stop() {
+                stopped.set(true);
+            }
+        };
+        var viewModel = newViewModel(List.of(UNIT_1_1, UNIT_1_2), player);
+        viewModel.selectUnit(UNIT_1_1);
+        viewModel.playOrPause();
+        viewModel.playOrPause(); // pauses
+        stopped.set(false); // the first selection stops the player as well
+
+        viewModel.selectUnit(UNIT_1_2);
+
+        assertTrue(stopped.get());
+        assertEquals(PlaybackState.STOPPED, viewModel.playbackStateProperty().get());
     }
 
     @Test

@@ -15,20 +15,26 @@ TDDの作業用todo。使い捨て。
 
 # 再生の操作
 
-- [ ] 再生ボタンを一時停止とのトグルにし、一時停止状態と再開を追加する
+- [x] 再生ボタンを一時停止とのトグルにし、一時停止状態と再開を追加する
   - 設計案
     - AudioPlayer に pause() と resume() を足す。pause は位置を保ったまま止め、resume はそこから続ける。pause では PlaybackListener.stopped() を呼ばない（stopped は停止と末尾到達だけ）。MediaAudioPlayer は MediaPlayer.pause() / play() に対応させる
     - ViewModel は再生状態 PlaybackState { STOPPED, PLAYING, PAUSED } をプロパティとして公開する。play() を playOrPause() に置き換え、STOPPED なら再生、PLAYING なら一時停止、PAUSED なら再開。stop() は今までどおり停止（最終再生日時の記録は listener.stopped() 経由のまま）
     - 一時停止中は再生位置の表示と再生中の行はそのまま残す。一時停止中のターンのクリックはそのターンから再生（PLAYING）。一時停止中に別ユニットを選ぶと停止
     - View の再生ボタン（ID play）はそのままで、アイコンを状態に合わせて PLAY_ARROW（停止中・一時停止中）と PAUSE（再生中）に切り替える
   - テストリスト
-    - [ ] ViewModel: 停止中に playOrPause() すると再生が始まり、状態は PLAYING
-    - [ ] ViewModel: 再生中に playOrPause() するとプレイヤーの pause() が呼ばれ、状態は PAUSED。再生位置の表示と再生中の行は変わらない
-    - [ ] ViewModel: 一時停止中に playOrPause() するとプレイヤーの resume() が呼ばれ、状態は PLAYING
-    - [ ] ViewModel: 一時停止中に stop() するとプレイヤーの stop() が呼ばれ、状態は STOPPED。停止時刻は今までどおり記録される
-    - [ ] ViewModel: 再生が末尾に達して stopped() が来ると、状態は STOPPED
-    - [ ] ViewModel: 一時停止中にターンをクリックすると、そのターンの開始位置から再生が始まり（play が呼ばれる）、状態は PLAYING
-    - [ ] ViewModel: 一時停止中に別のユニットを選ぶと、プレイヤーが停止する
-    - [ ] View: 再生ボタンのアイコンは、停止中と一時停止中は PLAY_ARROW、再生中は PAUSE
-    - [ ] View: 再生中に再生ボタンを押すと一時停止し、もう一度押すと再開する
-    - [ ] MediaAudioPlayer: pause() と resume() は MediaPlayer の pause / play を呼ぶ（ヘッドレスでは MediaPlayer が動かないため、実機で確認。既存の MediaAudioPlayer のテスト方針に合わせる）
+    - [x] ViewModel: 停止中に playOrPause() すると再生が始まり、状態は PLAYING
+    - [x] ViewModel: 再生中に playOrPause() するとプレイヤーの pause() が呼ばれ、状態は PAUSED。再生位置の表示と再生中の行は変わらない
+    - [x] ViewModel: 一時停止中に playOrPause() するとプレイヤーの resume() が呼ばれ、状態は PLAYING
+    - [x] ViewModel: 一時停止中に stop() するとプレイヤーの stop() が呼ばれ、状態は STOPPED。停止時刻は今までどおり記録される
+    - [x] ViewModel: 再生が末尾に達して stopped() が来ると、状態は STOPPED
+    - [x] ViewModel: 一時停止中にターンをクリックすると、そのターンの開始位置から再生が始まり（play が呼ばれる）、状態は PLAYING
+    - [x] ViewModel: 一時停止中に別のユニットを選ぶと、プレイヤーが停止する
+    - [x] View: 再生ボタンのアイコンは、停止中と一時停止中は PLAY_ARROW、再生中は PAUSE
+    - [x] View: 再生中に再生ボタンを押すと一時停止し、もう一度押すと再開する
+    - [x] MediaAudioPlayer: pause() と resume() は MediaPlayer の pause / play を呼ぶ（ヘッドレスでは MediaPlayer が動かないため、実機で確認。既存の MediaAudioPlayer のテスト方針に合わせる）
+
+# その他
+- [ ] アプリ名を English Drill Playerにする。
+
+# バグ
+- [ ] ターンリストの下のほうをクリックすると、スクロールバーが上に戻ってしまう。

@@ -74,6 +74,8 @@ class UnitViewTest {
         new AtomicReference<>();
     private final AtomicInteger playCount = new AtomicInteger();
     private final AtomicBoolean stopped = new AtomicBoolean(false);
+    private final AtomicBoolean paused = new AtomicBoolean(false);
+    private final AtomicBoolean resumed = new AtomicBoolean(false);
 
     @Start
     void setup(Stage stage) {
@@ -89,6 +91,16 @@ class UnitViewTest {
             @Override
             public void stop() {
                 stopped.set(true);
+            }
+
+            @Override
+            public void pause() {
+                paused.set(true);
+            }
+
+            @Override
+            public void resume() {
+                resumed.set(true);
             }
         };
         viewModel = new UnitViewModel(
@@ -479,6 +491,38 @@ class UnitViewTest {
         assertEquals(
             UNIT_1_1.audioFile(), units.getSelectionModel().getSelectedItem().audioFile()
         );
+    }
+
+    @Test
+    @DisplayName("再生ボタンのアイコンは、停止中は PLAY_ARROW、再生中は PAUSE、一時停止中は PLAY_ARROW に切り替わる")
+    void the_play_button_icon_follows_the_playback_state(FxRobot robot) {
+        var play = robot.lookup("#play").queryButton();
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+        assertEquals(Material2MZ.PLAY_ARROW, ((FontIcon) play.getGraphic()).getIconCode());
+
+        robot.interact(viewModel::playOrPause); // playing
+        assertEquals(Material2MZ.PAUSE, ((FontIcon) play.getGraphic()).getIconCode());
+
+        robot.interact(viewModel::playOrPause); // paused
+        assertEquals(Material2MZ.PLAY_ARROW, ((FontIcon) play.getGraphic()).getIconCode());
+    }
+
+    @Test
+    @DisplayName("再生中に再生ボタンを押すと一時停止し（プレイヤーの pause が呼ばれる）、もう一度押すと再開する（resume が呼ばれる）")
+    void clicking_play_while_playing_pauses_and_clicking_again_resumes(FxRobot robot) {
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+        robot.clickOn("#play");
+
+        robot.clickOn("#play");
+        assertTrue(paused.get());
+        assertEquals(PlaybackState.PAUSED, viewModel.playbackStateProperty().get());
+
+        robot.clickOn("#play");
+        assertTrue(resumed.get());
+        assertEquals(PlaybackState.PLAYING, viewModel.playbackStateProperty().get());
+        assertEquals(1, playCount.get());
     }
 
     @Test

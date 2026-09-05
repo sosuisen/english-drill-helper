@@ -50,6 +50,8 @@ public class UnitViewModel {
         new ReadOnlyObjectWrapper<>(Optional.empty());
     private final ReadOnlyStringWrapper selectedUnitTitle = new ReadOnlyStringWrapper();
     private final ReadOnlyBooleanWrapper unitSelected = new ReadOnlyBooleanWrapper();
+    private final ReadOnlyObjectWrapper<PlaybackState> playbackState =
+        new ReadOnlyObjectWrapper<>(PlaybackState.STOPPED);
     private final ObservableList<Segment> segments = FXCollections.observableArrayList();
     private final ObservableList<Segment> readOnlySegments =
         FXCollections.unmodifiableObservableList(segments);
@@ -235,6 +237,7 @@ public class UnitViewModel {
             return;
         }
         player.stop(); // the playback belongs to the unit that was selected
+        playbackState.set(PlaybackState.STOPPED);
         selectedUnit.set(Optional.ofNullable(unit));
         segments.clear();
         if (unit != null) {
@@ -344,6 +347,7 @@ public class UnitViewModel {
     }
 
     private void playFrom(Unit unit, Duration start) {
+        playbackState.set(PlaybackState.PLAYING);
         player.play(unit.audioFile().path(), start, new PlaybackListener() {
             @Override
             public void positionChanged(Duration position) {
@@ -354,6 +358,7 @@ public class UnitViewModel {
 
             @Override
             public void stopped() {
+                playbackState.set(PlaybackState.STOPPED);
                 recordStop(unit);
             }
         });
@@ -373,6 +378,33 @@ public class UnitViewModel {
         return unit.lastPlayedAt()
             .map(LAST_PLAYED_AT_FORMAT.withZone(clock.getZone())::format)
             .orElse("");
+    }
+
+    /**
+     * Plays the selected unit when nothing is playing, pauses the playback
+     * while it is playing, and goes on with it while it is paused.
+     */
+    public void playOrPause() {
+        switch (playbackState.get()) {
+            case PLAYING -> {
+                player.pause();
+                playbackState.set(PlaybackState.PAUSED);
+            }
+            case PAUSED -> {
+                player.resume();
+                playbackState.set(PlaybackState.PLAYING);
+            }
+            case STOPPED -> play();
+        }
+    }
+
+    /**
+     * Returns the state of the playback.
+     *
+     * @return the state
+     */
+    public ReadOnlyObjectProperty<PlaybackState> playbackStateProperty() {
+        return playbackState.getReadOnlyProperty();
     }
 
     /**

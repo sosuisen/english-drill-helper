@@ -21,6 +21,18 @@ public interface AudioPlayer {
     void play(Path file, Duration start, PlaybackListener listener);
 
     /**
+     * Pauses the playback, keeping its position. The listener is not told a
+     * stop. Does nothing while nothing is playing.
+     */
+    void pause();
+
+    /**
+     * Goes on with a paused playback from where it was paused. Does nothing
+     * while nothing is paused.
+     */
+    void resume();
+
+    /**
      * Stops the playback. Does nothing while nothing is playing.
      */
     void stop();

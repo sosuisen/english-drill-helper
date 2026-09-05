@@ -14,6 +14,16 @@ public class NullAudioPlayer implements AudioPlayer {
     }
 
     @Override
+    public void pause() {
+        // does nothing
+    }
+
+    @Override
+    public void resume() {
+        // does nothing
+    }
+
+    @Override
     public void stop() {
         // does nothing
     }

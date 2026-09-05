@@ -142,12 +142,10 @@ public class UnitView implements View {
                                                 .withChildren(
                                                     ButtonBuilder.create()
                                                         .id("play")
-                                                        .graphic(
-                                                            new FontIcon(Material2MZ.PLAY_ARROW)
-                                                        )
                                                         .addStyleClass(Styles.BUTTON_ICON)
                                                         .addStyleClass(Styles.ACCENT)
-                                                        .onAction(_ -> viewModel.play())
+                                                        .onAction(_ -> viewModel.playOrPause())
+                                                        .apply(this::showPlayOrPause)
                                                         .apply(this::disableWithoutSelection)
                                                         .build(),
                                                     ButtonBuilder.create()
@@ -234,6 +232,18 @@ public class UnitView implements View {
 
     private boolean isPlaying(TurnRow row) {
         return viewModel.playingTurnRowProperty().get().filter(row::equals).isPresent();
+    }
+
+    // The play button pauses while playing and plays otherwise, so its icon
+    // shows what a click does.
+    private void showPlayOrPause(Button play) {
+        var icon = new FontIcon(Material2MZ.PLAY_ARROW);
+        play.setGraphic(icon);
+        viewModel.playbackStateProperty().subscribe(
+            state -> icon.setIconCode(
+                state == PlaybackState.PLAYING ? Material2MZ.PAUSE : Material2MZ.PLAY_ARROW
+            )
+        );
     }
 
     // Playing and stopping make sense only while a unit is selected.
