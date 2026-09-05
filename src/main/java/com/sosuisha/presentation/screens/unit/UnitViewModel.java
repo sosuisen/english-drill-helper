@@ -23,6 +23,8 @@ import com.sosuisha.domain.service.AudioPlayer;
 import com.sosuisha.domain.service.PlaybackListener;
 
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -47,7 +49,8 @@ public class UnitViewModel {
         FXCollections.unmodifiableObservableList(units);
     private final ObjectProperty<Optional<Unit>> selectedUnit =
         new SimpleObjectProperty<>(Optional.empty());
-    private final ReadOnlyStringWrapper selectedFileName = new ReadOnlyStringWrapper();
+    private final ReadOnlyStringWrapper selectedUnitTitle = new ReadOnlyStringWrapper();
+    private final ReadOnlyBooleanWrapper unitSelected = new ReadOnlyBooleanWrapper();
     private final ObservableList<Segment> segments = FXCollections.observableArrayList();
     private final ObservableList<Segment> readOnlySegments =
         FXCollections.unmodifiableObservableList(segments);
@@ -87,9 +90,8 @@ public class UnitViewModel {
             Objects.requireNonNull(segmentLoader, "segmentLoader must not be null");
         this.executor = Objects.requireNonNull(executor, "executor must not be null");
         this.units.setAll(units);
-        selectedFileName.bind(
-            selectedUnit.map(unit -> unit.map(Unit::fileName).orElse(""))
-        );
+        selectedUnitTitle.bind(selectedUnit.map(unit -> unit.map(Unit::title).orElse("")));
+        unitSelected.bind(selectedUnit.map(Optional::isPresent));
         segments.addListener(
             (ListChangeListener<Segment>) _ -> drills.setAll(drillsOfSelectedUnit())
         );
@@ -235,13 +237,23 @@ public class UnitViewModel {
     }
 
     /**
-     * Returns the file name of the selected unit. It is an empty string while
-     * no unit is selected.
+     * Returns the title of the selected unit (see {@link Unit#title()}). It is
+     * an empty string while no unit is selected.
      *
-     * @return read-only string property of the selected file name
+     * @return read-only string property of the selected unit title
      */
-    public ReadOnlyStringProperty selectedFileNameProperty() {
-        return selectedFileName.getReadOnlyProperty();
+    public ReadOnlyStringProperty selectedUnitTitleProperty() {
+        return selectedUnitTitle.getReadOnlyProperty();
+    }
+
+    /**
+     * Tells whether a unit is selected. The play and stop controls make sense
+     * only then.
+     *
+     * @return read-only boolean property, true while a unit is selected
+     */
+    public ReadOnlyBooleanProperty unitSelectedProperty() {
+        return unitSelected.getReadOnlyProperty();
     }
 
     /**

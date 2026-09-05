@@ -108,13 +108,13 @@ class UnitViewTest {
     }
 
     @Test
-    @DisplayName("リストのファイル名をクリックすると、選ばれたファイル名がラベルに表示される")
-    void clicking_a_file_name_in_the_list_shows_the_selected_file_name_in_the_label(
+    @DisplayName("リストのファイル名をクリックすると、選ばれたユニットの表示名（番号と拡張子を除いた名前）がラベルに表示される")
+    void clicking_a_file_name_in_the_list_shows_the_selected_unit_title_in_the_label(
         FxRobot robot) {
         robot.clickOn("012_Unit 1.2.mp3");
 
-        assertEquals("012_Unit 1.2.mp3", viewModel.selectedFileNameProperty().get());
-        verifyThat("#selectedFileName", LabeledMatchers.hasText("012_Unit 1.2.mp3"));
+        assertEquals("Unit 1.2", viewModel.selectedUnitTitleProperty().get());
+        verifyThat("#selectedUnitTitle", LabeledMatchers.hasText("Unit 1.2"));
     }
 
     @Test
@@ -252,8 +252,26 @@ class UnitViewTest {
     }
 
     @Test
+    @DisplayName("ユニットが選択されていないときは Play と Stop のボタンは disabled で、ユニットを選ぶと有効になる")
+    void the_play_and_stop_buttons_are_disabled_until_a_unit_is_selected(FxRobot robot) {
+        var play = robot.lookup("#play").queryButton();
+        var stop = robot.lookup("#stop").queryButton();
+        assertTrue(play.isDisabled());
+        assertTrue(stop.isDisabled());
+
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertFalse(play.isDisabled());
+        assertFalse(stop.isDisabled());
+    }
+
+    @Test
     @DisplayName("停止ボタンを押すと、再生が停止する")
     void clicking_stop_stops_the_playback(FxRobot robot) {
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+
         robot.clickOn("#stop");
 
         assertTrue(stopped.get());

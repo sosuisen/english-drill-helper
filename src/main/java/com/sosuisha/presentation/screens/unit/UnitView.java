@@ -18,6 +18,7 @@ import io.github.sosuisen.jfxbuilder.graphics.SceneBuilder;
 import io.github.sosuisen.jfxbuilder.graphics.VBoxBuilder;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.skin.VirtualFlow;
@@ -78,9 +79,9 @@ public class UnitView implements View {
                         VBoxBuilder
                             .withChildren(
                                 LabelBuilder.create()
-                                    .id("selectedFileName")
+                                    .id("selectedUnitTitle")
                                     .textPropertyApply(
-                                        text -> text.bind(viewModel.selectedFileNameProperty())
+                                        text -> text.bind(viewModel.selectedUnitTitleProperty())
                                     )
                                     .build(),
                                 HBoxBuilder
@@ -91,12 +92,14 @@ public class UnitView implements View {
                                             .addStyleClass(Styles.BUTTON_ICON)
                                             .addStyleClass(Styles.ACCENT)
                                             .onAction(_ -> viewModel.play())
+                                            .apply(this::disableWithoutSelection)
                                             .build(),
                                         ButtonBuilder.create()
                                             .id("stop")
                                             .graphic(new FontIcon(Material2MZ.STOP))
                                             .addStyleClass(Styles.BUTTON_ICON)
                                             .onAction(_ -> viewModel.stop())
+                                            .apply(this::disableWithoutSelection)
                                             .build()
                                     )
                                     .spacing(10)
@@ -121,6 +124,11 @@ public class UnitView implements View {
             .width(WIDTH)
             .height(HEIGHT)
             .build();
+    }
+
+    // Playing and stopping make sense only while a unit is selected.
+    private void disableWithoutSelection(Button button) {
+        button.disableProperty().bind(viewModel.unitSelectedProperty().not());
     }
 
     // The first row of a drill gets a line above it as the boundary of the drill,

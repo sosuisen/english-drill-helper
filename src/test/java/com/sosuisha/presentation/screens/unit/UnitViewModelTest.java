@@ -1,6 +1,7 @@
 package com.sosuisha.presentation.screens.unit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -61,13 +62,25 @@ class UnitViewModelTest {
     }
 
     @Test
-    @DisplayName("ユニットを選ぶと、そのファイル名が選択中のファイル名になる")
-    void selecting_a_unit_makes_its_file_name_the_selected_file_name() {
+    @DisplayName("ユニットを選ぶと、その表示名（番号と拡張子を除いた名前）が選択中のユニットの表示名になる")
+    void selecting_a_unit_makes_its_title_the_selected_unit_title() {
         var viewModel = newViewModel(List.of(UNIT_1_1), new NullAudioPlayer());
 
         viewModel.selectUnit(UNIT_1_1);
 
-        assertEquals("011_Unit 1.1.mp3", viewModel.selectedFileNameProperty().get());
+        assertEquals("Unit 1.1", viewModel.selectedUnitTitleProperty().get());
+    }
+
+    @Test
+    @DisplayName("ユニットが選択されているかのプロパティは、未選択で false、選択で true、選択を外すと false になる")
+    void the_unit_selected_property_follows_the_selection() {
+        var viewModel = newViewModel(List.of(UNIT_1_1), new NullAudioPlayer());
+
+        assertFalse(viewModel.unitSelectedProperty().get());
+        viewModel.selectUnit(UNIT_1_1);
+        assertTrue(viewModel.unitSelectedProperty().get());
+        viewModel.selectUnit(null);
+        assertFalse(viewModel.unitSelectedProperty().get());
     }
 
     @Test
