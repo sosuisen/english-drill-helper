@@ -11,6 +11,8 @@ import java.util.Optional;
  * @param lastPlayedAt time when the unit was last played, or empty if it has never been played
  */
 public record Unit(AudioFile audioFile, Optional<Instant> lastPlayedAt) {
+    private static final String INTRODUCTION_UNIT_MARK = "Unit 0.";
+
     /**
      * Creates the unit.
      *
@@ -28,6 +30,17 @@ public record Unit(AudioFile audioFile, Optional<Instant> lastPlayedAt) {
      */
     public String fileName() {
         return audioFile.fileName();
+    }
+
+    /**
+     * Tells whether this unit is one of the introduction (Unit 0.x), whose
+     * file name contains {@code Unit 0.}. The introduction units are built
+     * differently from the other units (see ADR 004).
+     *
+     * @return true if this unit is an introduction unit
+     */
+    public boolean isIntroduction() {
+        return fileName().contains(INTRODUCTION_UNIT_MARK);
     }
 
     /**

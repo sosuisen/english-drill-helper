@@ -36,14 +36,14 @@ import javafx.stage.Stage;
 
 @ExtendWith(ApplicationExtension.class)
 class UnitViewTest {
-    private static final Unit UNIT_0_1 = new Unit(
-        new AudioFile(Path.of("001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1"), Optional.empty()
+    private static final Unit UNIT_1_1 = new Unit(
+        new AudioFile(Path.of("011_Unit 1.1.mp3"), "fingerprint-of-unit-1-1"), Optional.empty()
     );
-    private static final Unit UNIT_0_2 = new Unit(
-        new AudioFile(Path.of("002_Unit 0.2.mp3"), "fingerprint-of-unit-0-2"), Optional.empty()
+    private static final Unit UNIT_1_2 = new Unit(
+        new AudioFile(Path.of("012_Unit 1.2.mp3"), "fingerprint-of-unit-1-2"), Optional.empty()
     );
-    private static final Unit PLAYED_UNIT_0_3 = new Unit(
-        new AudioFile(Path.of("003_Unit 0.3.mp3"), "fingerprint-of-unit-0-3"),
+    private static final Unit PLAYED_UNIT_1_3 = new Unit(
+        new AudioFile(Path.of("013_Unit 1.3.mp3"), "fingerprint-of-unit-1-3"),
         Optional.of(Instant.parse("2026-09-05T10:00:00Z"))
     );
 
@@ -65,7 +65,7 @@ class UnitViewTest {
             }
         };
         viewModel = new UnitViewModel(
-            List.of(UNIT_0_1, UNIT_0_2, PLAYED_UNIT_0_3), player, new NullUnitRepository(),
+            List.of(UNIT_1_1, UNIT_1_2, PLAYED_UNIT_1_3), player, new NullUnitRepository(),
             Clock.fixed(Instant.EPOCH, ZoneOffset.UTC), UnitViewTest::segmentsOf, Runnable::run
         );
         var view = new UnitView(viewModel);
@@ -86,27 +86,27 @@ class UnitViewTest {
     @Test
     @DisplayName("再生済みのユニットのセルには、ファイル名と最終再生日時が表示される")
     void the_cell_of_a_played_unit_shows_the_file_name_and_the_last_played_at(FxRobot robot) {
-        assertTrue(robot.lookup("003_Unit 0.3.mp3  2026-09-05 10:00").tryQuery().isPresent());
+        assertTrue(robot.lookup("013_Unit 1.3.mp3  2026-09-05 10:00").tryQuery().isPresent());
     }
 
     @Test
     @DisplayName("リストのファイル名をクリックすると、選ばれたファイル名がラベルに表示される")
     void clicking_a_file_name_in_the_list_shows_the_selected_file_name_in_the_label(
         FxRobot robot) {
-        robot.clickOn("002_Unit 0.2.mp3");
+        robot.clickOn("012_Unit 1.2.mp3");
 
-        assertEquals("002_Unit 0.2.mp3", viewModel.selectedFileNameProperty().get());
-        verifyThat("#selectedFileName", LabeledMatchers.hasText("002_Unit 0.2.mp3"));
+        assertEquals("012_Unit 1.2.mp3", viewModel.selectedFileNameProperty().get());
+        verifyThat("#selectedFileName", LabeledMatchers.hasText("012_Unit 1.2.mp3"));
     }
 
     @Test
     @DisplayName("ファイルを選んで再生ボタンを押すと、そのファイルが再生される")
     void selecting_a_file_and_clicking_play_plays_the_file(FxRobot robot) {
-        robot.clickOn("001_Unit 0.1.mp3");
+        robot.clickOn("011_Unit 1.1.mp3");
 
         robot.clickOn("#play");
 
-        assertEquals(UNIT_0_1.audioFile().path(), playedFile.get());
+        assertEquals(UNIT_1_1.audioFile().path(), playedFile.get());
     }
 
     @Test
@@ -120,13 +120,13 @@ class UnitViewTest {
     }
 
     @Test
-    @DisplayName("ユニットを選ぶと、ターン行の一覧に「1-1」などのラベルが表示される")
+    @DisplayName("ユニットを選ぶと、ターン行の一覧に「1-1 [Key]」「1-3」などのラベルが表示される")
     void selecting_a_unit_shows_the_turn_labels_in_the_list(FxRobot robot) {
-        robot.clickOn("001_Unit 0.1.mp3");
+        robot.clickOn("011_Unit 1.1.mp3");
         WaitForAsyncUtils.waitForFxEvents();
 
-        assertTrue(robot.lookup("1-1").tryQuery().isPresent());
-        assertTrue(robot.lookup("5-1").tryQuery().isPresent());
+        assertTrue(robot.lookup("1-1 [Key]").tryQuery().isPresent());
+        assertTrue(robot.lookup("1-3").tryQuery().isPresent());
     }
 
     @Test
@@ -137,15 +137,22 @@ class UnitViewTest {
         assertTrue(stopped.get());
     }
 
-    /** Five sound and silence pairs for UNIT_0_1, to match the drill book; nothing for others. */
+    /** A regular unit of five drills for UNIT_1_1; nothing for others. */
     private static List<Segment> segmentsOf(AudioFile audioFile) {
-        if (!audioFile.fingerprint().equals(UNIT_0_1.audioFile().fingerprint())) {
+        if (!audioFile.fingerprint().equals(UNIT_1_1.audioFile().fingerprint())) {
             return List.of();
         }
         var segments = new ArrayList<Segment>();
-        for (var i = 0; i < 10; i++) {
-            var kind = i % 2 == 0 ? Segment.Kind.SOUND : Segment.Kind.SILENCE;
-            segments.add(new Segment(i, Duration.ofSeconds(i), Duration.ofSeconds(1), kind));
+        var start = Duration.ZERO;
+        for (var d = 0; d < 5; d++) {
+            for (var seconds : List.of(3.0 + d, 3.0 + d, 0.6, 2.0 + d, 2.0 + d)) {
+                var sound = Duration.ofMillis(Math.round(seconds * 1000));
+                segments.add(new Segment(segments.size(), start, sound, Segment.Kind.SOUND));
+                start = start.plus(sound);
+                var silence = Duration.ofSeconds(2);
+                segments.add(new Segment(segments.size(), start, silence, Segment.Kind.SILENCE));
+                start = start.plus(silence);
+            }
         }
         return segments;
     }

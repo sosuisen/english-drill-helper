@@ -40,19 +40,19 @@ import com.sosuisha.domain.service.NullAudioPlayer;
 @ExtendWith(ApplicationExtension.class) // Task needs the JavaFX toolkit
 class UnitViewModelTest {
     private static final Function<AudioFile, List<Segment>> NO_SEGMENTS = _ -> List.of();
-    private static final Unit UNIT_0_1 = new Unit(
-        new AudioFile(Path.of("units", "001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1"),
+    private static final Unit UNIT_1_1 = new Unit(
+        new AudioFile(Path.of("units", "011_Unit 1.1.mp3"), "fingerprint-of-unit-1-1"),
         Optional.empty()
     );
-    private static final Unit UNIT_0_2 = new Unit(
-        new AudioFile(Path.of("units", "002_Unit 0.2.mp3"), "fingerprint-of-unit-0-2"),
+    private static final Unit UNIT_1_2 = new Unit(
+        new AudioFile(Path.of("units", "012_Unit 1.2.mp3"), "fingerprint-of-unit-1-2"),
         Optional.empty()
     );
 
     @Test
     @DisplayName("渡されたユニットの一覧を、渡された順序のまま保持する")
     void holds_the_given_units_in_the_given_order() {
-        var units = List.of(UNIT_0_1, UNIT_0_2);
+        var units = List.of(UNIT_1_1, UNIT_1_2);
 
         var viewModel = newViewModel(units, new NullAudioPlayer());
 
@@ -62,30 +62,30 @@ class UnitViewModelTest {
     @Test
     @DisplayName("ユニットを選ぶと、そのファイル名が選択中のファイル名になる")
     void selecting_a_unit_makes_its_file_name_the_selected_file_name() {
-        var viewModel = newViewModel(List.of(UNIT_0_1), new NullAudioPlayer());
+        var viewModel = newViewModel(List.of(UNIT_1_1), new NullAudioPlayer());
 
-        viewModel.selectUnit(UNIT_0_1);
+        viewModel.selectUnit(UNIT_1_1);
 
-        assertEquals("001_Unit 0.1.mp3", viewModel.selectedFileNameProperty().get());
+        assertEquals("011_Unit 1.1.mp3", viewModel.selectedFileNameProperty().get());
     }
 
     @Test
     @DisplayName("ユニットを選んで再生すると、その音声ファイルがプレイヤーで再生される")
     void playing_with_a_selected_unit_plays_its_audio_file_with_the_player() {
         var playedFile = new AtomicReference<@Nullable Path>();
-        var viewModel = newViewModel(List.of(UNIT_0_1), recordingPlayer(playedFile));
-        viewModel.selectUnit(UNIT_0_1);
+        var viewModel = newViewModel(List.of(UNIT_1_1), recordingPlayer(playedFile));
+        viewModel.selectUnit(UNIT_1_1);
 
         viewModel.play();
 
-        assertEquals(UNIT_0_1.audioFile().path(), playedFile.get());
+        assertEquals(UNIT_1_1.audioFile().path(), playedFile.get());
     }
 
     @Test
     @DisplayName("ユニットを選んでいない状態で再生しても、何も再生されない")
     void playing_without_a_selected_unit_plays_nothing() {
         var playedFile = new AtomicReference<@Nullable Path>();
-        var viewModel = newViewModel(List.of(UNIT_0_1), recordingPlayer(playedFile));
+        var viewModel = newViewModel(List.of(UNIT_1_1), recordingPlayer(playedFile));
 
         viewModel.play();
 
@@ -102,7 +102,7 @@ class UnitViewModelTest {
                 stopped.set(true);
             }
         };
-        var viewModel = newViewModel(List.of(UNIT_0_1), player);
+        var viewModel = newViewModel(List.of(UNIT_1_1), player);
 
         viewModel.stop();
 
@@ -124,22 +124,22 @@ class UnitViewModelTest {
         };
         var stoppedAt = Instant.parse("2026-09-05T10:00:00Z");
         var viewModel = new UnitViewModel(
-            List.of(UNIT_0_1), stopCapturingPlayer(stopCallback), repository,
+            List.of(UNIT_1_1), stopCapturingPlayer(stopCallback), repository,
             Clock.fixed(stoppedAt, ZoneOffset.UTC), NO_SEGMENTS, Runnable::run
         );
-        viewModel.selectUnit(UNIT_0_1);
+        viewModel.selectUnit(UNIT_1_1);
         viewModel.play();
 
         Objects.requireNonNull(stopCallback.get()).run();
 
-        assertEquals("fingerprint-of-unit-0-1", savedFingerprint.get());
+        assertEquals("fingerprint-of-unit-1-1", savedFingerprint.get());
         assertEquals(stoppedAt, savedPlayedAt.get());
     }
 
     @Test
     @DisplayName("最終再生日時の表示文字は、Clockの時刻帯での「yyyy-MM-dd HH:mm」である")
     void the_text_of_the_last_played_at_is_yyyy_mm_dd_hh_mm_in_the_zone_of_the_clock() {
-        var played = UNIT_0_1.withLastPlayedAt(Instant.parse("2026-09-05T10:05:00Z"));
+        var played = UNIT_1_1.withLastPlayedAt(Instant.parse("2026-09-05T10:05:00Z"));
         var viewModel = new UnitViewModel(
             List.of(played), new NullAudioPlayer(), new NullUnitRepository(),
             Clock.fixed(Instant.EPOCH, ZoneOffset.ofHours(9)), NO_SEGMENTS, Runnable::run
@@ -154,17 +154,17 @@ class UnitViewModelTest {
         var stopCallback = new AtomicReference<@Nullable Runnable>();
         var stoppedAt = Instant.parse("2026-09-05T10:00:00Z");
         var viewModel = new UnitViewModel(
-            List.of(UNIT_0_1, UNIT_0_2), stopCapturingPlayer(stopCallback),
+            List.of(UNIT_1_1, UNIT_1_2), stopCapturingPlayer(stopCallback),
             new NullUnitRepository(), Clock.fixed(stoppedAt, ZoneOffset.UTC), NO_SEGMENTS,
             Runnable::run
         );
-        viewModel.selectUnit(UNIT_0_1);
+        viewModel.selectUnit(UNIT_1_1);
         viewModel.play();
 
         Objects.requireNonNull(stopCallback.get()).run();
 
         assertEquals(
-            List.of(UNIT_0_1.withLastPlayedAt(stoppedAt), UNIT_0_2), viewModel.getUnits()
+            List.of(UNIT_1_1.withLastPlayedAt(stoppedAt), UNIT_1_2), viewModel.getUnits()
         );
     }
 
@@ -176,10 +176,10 @@ class UnitViewModelTest {
         var secondStop = Instant.parse("2026-09-05T11:00:00Z");
         var now = new AtomicReference<Instant>(firstStop);
         var viewModel = new UnitViewModel(
-            List.of(UNIT_0_1), stopCapturingPlayer(stopCallback), new NullUnitRepository(),
+            List.of(UNIT_1_1), stopCapturingPlayer(stopCallback), new NullUnitRepository(),
             settableClock(now), NO_SEGMENTS, Runnable::run
         );
-        viewModel.selectUnit(UNIT_0_1);
+        viewModel.selectUnit(UNIT_1_1);
         viewModel.play();
         Objects.requireNonNull(stopCallback.get()).run();
         now.set(secondStop);
@@ -211,32 +211,32 @@ class UnitViewModelTest {
 
     // セグメント読み込みのテスト。ローダーは指紋ごとの固定の対応表、Executor は同期実行または手動実行。
     // セグメントは、ハノンの構成（1ユニット5ドリル）に合うよう有音・無音を5組にする
-    private static final List<Segment> SEGMENTS_0_1 = pairs(5, Duration.ofSeconds(1));
-    private static final List<Segment> SEGMENTS_0_2 = pairs(5, Duration.ofSeconds(2));
+    private static final List<Segment> SEGMENTS_1_1 = regularUnit(0.0);
+    private static final List<Segment> SEGMENTS_1_2 = regularUnit(0.3);
     private static final Function<AudioFile, List<Segment>> SEGMENT_TABLE = audioFile -> Objects
         .requireNonNull(
             Map.of(
-                UNIT_0_1.audioFile().fingerprint(), SEGMENTS_0_1,
-                UNIT_0_2.audioFile().fingerprint(), SEGMENTS_0_2
+                UNIT_1_1.audioFile().fingerprint(), SEGMENTS_1_1,
+                UNIT_1_2.audioFile().fingerprint(), SEGMENTS_1_2
             ).get(audioFile.fingerprint())
         );
 
     @Test
     @DisplayName("ユニットを選ぶと、そのユニットのセグメントがローダーで読み込まれ、セグメント一覧に入る")
     void selecting_a_unit_loads_its_segments_into_the_segment_list() {
-        var viewModel = newViewModel(List.of(UNIT_0_1, UNIT_0_2), SEGMENT_TABLE, Runnable::run);
+        var viewModel = newViewModel(List.of(UNIT_1_1, UNIT_1_2), SEGMENT_TABLE, Runnable::run);
 
-        viewModel.selectUnit(UNIT_0_1);
+        viewModel.selectUnit(UNIT_1_1);
         WaitForAsyncUtils.waitForFxEvents();
 
-        assertEquals(SEGMENTS_0_1, viewModel.getSegments());
+        assertEquals(SEGMENTS_1_1, viewModel.getSegments());
     }
 
     @Test
     @DisplayName("選択を外すと、セグメント一覧は空になる")
     void clearing_the_selection_empties_the_segment_list() {
-        var viewModel = newViewModel(List.of(UNIT_0_1), SEGMENT_TABLE, Runnable::run);
-        viewModel.selectUnit(UNIT_0_1);
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run);
+        viewModel.selectUnit(UNIT_1_1);
         WaitForAsyncUtils.waitForFxEvents();
 
         viewModel.selectUnit(null);
@@ -248,55 +248,55 @@ class UnitViewModelTest {
     @Test
     @DisplayName("別のユニットを選ぶと、セグメント一覧は新しいユニットのものに置き換わり、前のものは残らない")
     void selecting_another_unit_replaces_the_segment_list_with_its_segments() {
-        var viewModel = newViewModel(List.of(UNIT_0_1, UNIT_0_2), SEGMENT_TABLE, Runnable::run);
-        viewModel.selectUnit(UNIT_0_1);
+        var viewModel = newViewModel(List.of(UNIT_1_1, UNIT_1_2), SEGMENT_TABLE, Runnable::run);
+        viewModel.selectUnit(UNIT_1_1);
         WaitForAsyncUtils.waitForFxEvents();
 
-        viewModel.selectUnit(UNIT_0_2);
+        viewModel.selectUnit(UNIT_1_2);
         WaitForAsyncUtils.waitForFxEvents();
 
-        assertEquals(SEGMENTS_0_2, viewModel.getSegments());
+        assertEquals(SEGMENTS_1_2, viewModel.getSegments());
     }
 
     @Test
     @DisplayName("セグメントの読み込みはExecutorに渡され、Executorが実行するまでセグメント一覧は空のままである")
     void loading_is_handed_to_the_executor_and_the_list_stays_empty_until_it_runs() {
         var queue = new ArrayDeque<Runnable>();
-        var viewModel = newViewModel(List.of(UNIT_0_1), SEGMENT_TABLE, queue::add);
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, queue::add);
 
-        viewModel.selectUnit(UNIT_0_1);
+        viewModel.selectUnit(UNIT_1_1);
         WaitForAsyncUtils.waitForFxEvents();
         var beforeRun = List.copyOf(viewModel.getSegments());
         Objects.requireNonNull(queue.poll()).run();
         WaitForAsyncUtils.waitForFxEvents();
 
         assertEquals(List.of(), beforeRun);
-        assertEquals(SEGMENTS_0_1, viewModel.getSegments());
+        assertEquals(SEGMENTS_1_1, viewModel.getSegments());
     }
 
     @Test
     @DisplayName("前に選んだユニットの読み込み結果が遅れて届いても、いま選んでいるユニットのセグメント一覧は上書きされない")
     void a_late_result_of_a_previously_selected_unit_does_not_overwrite_the_current_list() {
         var queue = new ArrayDeque<Runnable>();
-        var viewModel = newViewModel(List.of(UNIT_0_1, UNIT_0_2), SEGMENT_TABLE, queue::add);
-        viewModel.selectUnit(UNIT_0_1);
-        viewModel.selectUnit(UNIT_0_2);
-        var loadOf0_1 = Objects.requireNonNull(queue.poll());
-        var loadOf0_2 = Objects.requireNonNull(queue.poll());
+        var viewModel = newViewModel(List.of(UNIT_1_1, UNIT_1_2), SEGMENT_TABLE, queue::add);
+        viewModel.selectUnit(UNIT_1_1);
+        viewModel.selectUnit(UNIT_1_2);
+        var loadOf1_1 = Objects.requireNonNull(queue.poll());
+        var loadOf1_2 = Objects.requireNonNull(queue.poll());
 
-        loadOf0_2.run();
-        loadOf0_1.run();
+        loadOf1_2.run();
+        loadOf1_1.run();
         WaitForAsyncUtils.waitForFxEvents();
 
-        assertEquals(SEGMENTS_0_2, viewModel.getSegments());
+        assertEquals(SEGMENTS_1_2, viewModel.getSegments());
     }
 
     @Test
     @DisplayName("セグメント一覧が更新されると、ドリル一覧がそれに基づいて置き換わる。選択を外してセグメント一覧が空になると、ドリル一覧も空になる")
     void the_drill_list_follows_the_segment_list_and_empties_with_it() {
-        var viewModel = newViewModel(List.of(UNIT_0_1), SEGMENT_TABLE, Runnable::run);
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run);
 
-        viewModel.selectUnit(UNIT_0_1);
+        viewModel.selectUnit(UNIT_1_1);
         WaitForAsyncUtils.waitForFxEvents();
         var drillsOfSelected = List.copyOf(viewModel.getDrills());
         viewModel.selectUnit(null);
@@ -304,31 +304,51 @@ class UnitViewModelTest {
 
         assertEquals(5, drillsOfSelected.size());
         assertEquals(
-            new Drill(1, List.of(new Turn(1, 0, Optional.of(1)))), drillsOfSelected.get(0)
+            new Turn(1, Turn.Role.KEY_SENTENCE, List.of(0, 1)),
+            drillsOfSelected.get(0).turns().get(0)
         );
         assertEquals(List.of(), viewModel.getDrills());
     }
 
     @Test
-    @DisplayName("ターン行の一覧は、ドリル一覧から「ドリル番号-ターン番号」の順に作られる。5ドリル × 2ターンなら 1-1、1-2、2-1 … 5-2 の10行")
-    void turn_rows_are_labeled_drill_number_dash_turn_number_in_drill_and_turn_order() {
-        Function<AudioFile, List<Segment>> tenPairs = _ -> pairs(10, Duration.ofSeconds(1));
-        var viewModel = newViewModel(List.of(UNIT_0_1), tenPairs, Runnable::run);
+    @DisplayName("ターン行の一覧は、ドリル一覧から「ドリル番号-ターン番号」の順に作られ、Key sentence には [Key] が付く。5ドリル × 5ターンなら 1-1 [Key]、1-2 [Key]、1-3、1-4、1-5、2-1 [Key] … の25行")
+    void turn_rows_are_labeled_drill_number_dash_turn_number_with_key_for_key_sentences() {
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run);
 
-        viewModel.selectUnit(UNIT_0_1);
+        viewModel.selectUnit(UNIT_1_1);
         WaitForAsyncUtils.waitForFxEvents();
 
+        var labels = viewModel.getTurnRows().stream().map(TurnRow::label).toList();
+        assertEquals(25, labels.size());
         assertEquals(
-            List.of("1-1", "1-2", "2-1", "2-2", "3-1", "3-2", "4-1", "4-2", "5-1", "5-2"),
-            viewModel.getTurnRows().stream().map(TurnRow::label).toList()
+            List.of("1-1 [Key]", "1-2 [Key]", "1-3", "1-4", "1-5", "2-1 [Key]"),
+            labels.subList(0, 6)
+        );
+        assertEquals("5-5", labels.getLast());
+    }
+
+    @Test
+    @DisplayName("Unit 1.1 型（Key の対が冒頭に1組だけ）のユニットを選ぶと、ターン行は 1-1 [Key]、1-2 [Key]、1-3、1-4、1-5、2-1 … になる")
+    void turn_rows_of_a_unit_with_one_key_pair_start_with_the_key_pair_in_drill_one() {
+        Function<AudioFile, List<Segment>> oneKeyPair = _ -> unitWithOneKeyPair();
+        var viewModel = newViewModel(List.of(UNIT_1_1), oneKeyPair, Runnable::run);
+
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        var labels = viewModel.getTurnRows().stream().map(TurnRow::label).toList();
+        assertEquals(17, labels.size());
+        assertEquals(
+            List.of("1-1 [Key]", "1-2 [Key]", "1-3", "1-4", "1-5", "2-1", "2-2", "2-3"),
+            labels.subList(0, 8)
         );
     }
 
     @Test
     @DisplayName("ターン行の一覧は、選択を外してドリル一覧が空になると空になる")
     void turn_rows_empty_when_the_drill_list_empties() {
-        var viewModel = newViewModel(List.of(UNIT_0_1), SEGMENT_TABLE, Runnable::run);
-        viewModel.selectUnit(UNIT_0_1);
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run);
+        viewModel.selectUnit(UNIT_1_1);
         WaitForAsyncUtils.waitForFxEvents();
 
         viewModel.selectUnit(null);
@@ -337,12 +357,65 @@ class UnitViewModelTest {
         assertEquals(List.of(), viewModel.getTurnRows());
     }
 
-    /** Sound and silence pairs of the given length each, numbered from zero. */
-    private static List<Segment> pairs(int count, Duration each) {
+    @Test
+    @DisplayName("Unit 0.x のユニットを選ぶと、タイトルがドリル0、Cue ごとにドリルが作られ、ターン行は 0-1、1-1 … 1-5、2-1 … 2-5 の11行になる")
+    void an_introduction_unit_has_the_title_as_drill_zero_and_a_drill_per_cue() {
+        var unit0_1 = new Unit(
+            new AudioFile(Path.of("units", "001_Unit 0.1.mp3"), "fingerprint-of-unit-0-1"),
+            Optional.empty()
+        );
+        Function<AudioFile, List<Segment>> introduction = _ -> introductionUnit();
+        var viewModel = newViewModel(List.of(unit0_1), introduction, Runnable::run);
+
+        viewModel.selectUnit(unit0_1);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        var labels = viewModel.getTurnRows().stream().map(TurnRow::label).toList();
+        assertEquals(11, labels.size());
+        assertEquals(List.of("0-1", "1-1", "1-2"), labels.subList(0, 3));
+        assertEquals("2-5", labels.getLast());
+    }
+
+    /**
+     * Segments of a regular unit: five drills of a key sentence pair, a cue,
+     * and an answer pair, each sound followed by two seconds of silence. The
+     * offset makes the sounds of one unit differ from those of another.
+     */
+    private static List<Segment> regularUnit(double offsetSeconds) {
+        var sounds = new ArrayList<Double>();
+        for (var d = 0; d < 5; d++) {
+            var key = 3.0 + d + offsetSeconds;
+            var answer = 2.0 + d + offsetSeconds;
+            sounds.addAll(List.of(key, key, 0.6, answer, answer));
+        }
+        return segmentsOf(sounds);
+    }
+
+    /** Segments of a Unit 1.1 type unit: one key sentence pair, then five sets. */
+    private static List<Segment> unitWithOneKeyPair() {
+        var sounds = new ArrayList<Double>(List.of(3.0, 3.0));
+        for (var s = 0; s < 5; s++) {
+            sounds.addAll(List.of(0.6, 2.0 + s, 2.0 + s));
+        }
+        return segmentsOf(sounds);
+    }
+
+    /** Segments of an introduction unit: a title, then two drills of a cue and four sentences. */
+    private static List<Segment> introductionUnit() {
+        return segmentsOf(List.of(1.5, 0.4, 1.4, 1.4, 1.3, 1.3, 0.35, 1.6, 1.6, 1.4, 1.4));
+    }
+
+    /** Sounds of the given lengths in seconds, each followed by two seconds of silence. */
+    private static List<Segment> segmentsOf(List<Double> soundSeconds) {
         var segments = new ArrayList<Segment>();
-        for (var i = 0; i < count * 2; i++) {
-            var kind = i % 2 == 0 ? Segment.Kind.SOUND : Segment.Kind.SILENCE;
-            segments.add(new Segment(i, each.multipliedBy(i), each, kind));
+        var start = Duration.ZERO;
+        for (var seconds : soundSeconds) {
+            var sound = Duration.ofMillis(Math.round(seconds * 1000));
+            segments.add(new Segment(segments.size(), start, sound, Segment.Kind.SOUND));
+            start = start.plus(sound);
+            var silence = Duration.ofSeconds(2);
+            segments.add(new Segment(segments.size(), start, silence, Segment.Kind.SILENCE));
+            start = start.plus(silence);
         }
         return segments;
     }

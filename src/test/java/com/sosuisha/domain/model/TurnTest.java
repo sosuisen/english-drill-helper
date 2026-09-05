@@ -3,27 +3,30 @@ package com.sosuisha.domain.model;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.Optional;
+import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class TurnTest {
     @Test
-    @DisplayName("ターンは、ドリル内の番号と、有音セグメントのインデックスと、あれば無音セグメントのインデックスを持つ")
-    void turn_has_a_number_a_sound_index_and_an_optional_silence_index() {
-        var turn = new Turn(2, 2, Optional.of(3));
-        var last = new Turn(3, 4, Optional.empty());
+    @DisplayName("ターンは、ドリル内の番号と、役割と、含まれるセグメントのインデックスのリストを持つ")
+    void turn_has_a_number_a_role_and_the_indexes_of_its_segments() {
+        var turn = new Turn(2, Turn.Role.KEY_SENTENCE, List.of(4, 5, 6, 7));
 
         assertEquals(2, turn.number());
-        assertEquals(2, turn.soundIndex());
-        assertEquals(Optional.of(3), turn.silenceIndex());
-        assertEquals(Optional.empty(), last.silenceIndex());
+        assertEquals(Turn.Role.KEY_SENTENCE, turn.role());
+        assertEquals(List.of(4, 5, 6, 7), turn.segmentIndexes());
     }
 
     @Test
-    @DisplayName("番号が1未満のターンは作れない")
-    void turn_with_a_number_below_one_cannot_be_created() {
-        assertThrows(IllegalArgumentException.class, () -> new Turn(0, 0, Optional.of(1)));
+    @DisplayName("番号が1未満のターンや、セグメントを1つも含まないターンは作れない")
+    void turn_with_a_number_below_one_or_without_segments_cannot_be_created() {
+        assertThrows(
+            IllegalArgumentException.class, () -> new Turn(0, Turn.Role.CUE, List.of(0, 1))
+        );
+        assertThrows(
+            IllegalArgumentException.class, () -> new Turn(1, Turn.Role.CUE, List.of())
+        );
     }
 }

@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 
 import com.sosuisha.domain.model.AudioFile;
 import com.sosuisha.domain.model.Drill;
+import com.sosuisha.domain.model.DrillBook;
 import com.sosuisha.domain.model.Segment;
 import com.sosuisha.domain.model.Unit;
 import com.sosuisha.domain.repository.UnitRepository;
@@ -82,7 +83,7 @@ public class UnitViewModel {
             selectedUnit.map(unit -> unit.map(Unit::fileName).orElse(""))
         );
         segments.addListener(
-            (ListChangeListener<Segment>) _ -> drills.setAll(Drill.drillsOf(segments))
+            (ListChangeListener<Segment>) _ -> drills.setAll(drillsOfSelectedUnit())
         );
         drills.addListener((ListChangeListener<Drill>) _ -> turnRows.setAll(turnRowsOf(drills)));
     }
@@ -170,6 +171,12 @@ public class UnitViewModel {
             throw toRuntimeException(task.getException());
         });
         executor.execute(task);
+    }
+
+    private List<Drill> drillsOfSelectedUnit() {
+        return selectedUnit.get()
+            .map(unit -> DrillBook.drillsOf(segments, unit))
+            .orElse(List.of());
     }
 
     private boolean isSelected(Unit unit) {
