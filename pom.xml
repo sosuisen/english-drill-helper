@@ -22,6 +22,7 @@
     <jooq.version>3.21.7</jooq.version>
     <sqlite.jdbc.version>3.53.2.1</sqlite.jdbc.version>
     <javasound.mp3.version>1.9.8</javasound.mp3.version>
+    <ikonli.version>12.4.0</ikonli.version>
   </properties>
 
   <dependencies>
@@ -72,6 +73,17 @@
       <artifactId>javasound-mp3</artifactId>
       <version>${javasound.mp3.version}</version>
       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.kordamp.ikonli</groupId>
+      <artifactId>ikonli-javafx</artifactId>
+      <version>${ikonli.version}</version>
+    </dependency>
+    <dependency>
+      <!-- Material Design 2 icons, the set the AtlantaFX samples use. -->
+      <groupId>org.kordamp.ikonli</groupId>
+      <artifactId>ikonli-material2-pack</artifactId>
+      <version>${ikonli.version}</version>
     </dependency>
     <dependency>
       <!-- Compile time only. jOOQ classes such as org.jooq.conf.Settings carry
