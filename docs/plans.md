@@ -12,10 +12,23 @@ TDDの作業用todo。使い捨て。
 
 - [ ] 専用の非チェック例外（AudioFolderScanException）に対する処理（今はやらない）
 
-# 画面の調整
 
-- [x] 見栄え2: ターン行の役割をアイコンで示す。[Key] の代わりに鍵のアイコン、Cue の代わりに耳や吹き出しのアイコン（Material 2）。文字より目で追いやすくする
-  - 設計案: TurnRow のラベルから「[Key]」を外し、セルの graphic に役割のアイコンを置く。Key は Material 2 の VPN_KEY（鍵）、Cue は ANNOUNCEMENT（吹き出しに「!」。希望の chat_info は Material 2 パックに無いため、ユーザーがこれを選んだ）、Answer と SENTENCE はアイコンなし。アイコンの色は黒の 60%（rgba(0, 0, 0, 0.6)。薄い青は見えにくかった）。ラベルは「1-1」「1-Cue」のまま
+# 再生の操作
+
+- [ ] 再生ボタンを一時停止とのトグルにし、一時停止状態と再開を追加する
+  - 設計案
+    - AudioPlayer に pause() と resume() を足す。pause は位置を保ったまま止め、resume はそこから続ける。pause では PlaybackListener.stopped() を呼ばない（stopped は停止と末尾到達だけ）。MediaAudioPlayer は MediaPlayer.pause() / play() に対応させる
+    - ViewModel は再生状態 PlaybackState { STOPPED, PLAYING, PAUSED } をプロパティとして公開する。play() を playOrPause() に置き換え、STOPPED なら再生、PLAYING なら一時停止、PAUSED なら再開。stop() は今までどおり停止（最終再生日時の記録は listener.stopped() 経由のまま）
+    - 一時停止中は再生位置の表示と再生中の行はそのまま残す。一時停止中のターンのクリックはそのターンから再生（PLAYING）。一時停止中に別ユニットを選ぶと停止
+    - View の再生ボタン（ID play）はそのままで、アイコンを状態に合わせて PLAY_ARROW（停止中・一時停止中）と PAUSE（再生中）に切り替える
   - テストリスト
-    - [x] TurnRow: Key sentence のラベルは「1-1」になる（[Key] を付けない。既存のラベルのテストの書き換え）
-    - [x] View: Key の行のセルには鍵のアイコン（VPN_KEY）、Cue の行のセルには吹き出しのアイコン（ANNOUNCEMENT）が graphic として付く。Answer の行には graphic がない
+    - [ ] ViewModel: 停止中に playOrPause() すると再生が始まり、状態は PLAYING
+    - [ ] ViewModel: 再生中に playOrPause() するとプレイヤーの pause() が呼ばれ、状態は PAUSED。再生位置の表示と再生中の行は変わらない
+    - [ ] ViewModel: 一時停止中に playOrPause() するとプレイヤーの resume() が呼ばれ、状態は PLAYING
+    - [ ] ViewModel: 一時停止中に stop() するとプレイヤーの stop() が呼ばれ、状態は STOPPED。停止時刻は今までどおり記録される
+    - [ ] ViewModel: 再生が末尾に達して stopped() が来ると、状態は STOPPED
+    - [ ] ViewModel: 一時停止中にターンをクリックすると、そのターンの開始位置から再生が始まり（play が呼ばれる）、状態は PLAYING
+    - [ ] ViewModel: 一時停止中に別のユニットを選ぶと、プレイヤーが停止する
+    - [ ] View: 再生ボタンのアイコンは、停止中と一時停止中は PLAY_ARROW、再生中は PAUSE
+    - [ ] View: 再生中に再生ボタンを押すと一時停止し、もう一度押すと再開する
+    - [ ] MediaAudioPlayer: pause() と resume() は MediaPlayer の pause / play を呼ぶ（ヘッドレスでは MediaPlayer が動かないため、実機で確認。既存の MediaAudioPlayer のテスト方針に合わせる）
