@@ -30,3 +30,7 @@ TDDの作業用todo。使い捨て。
 - [x] Cue の文字色を上線と同じ -color-accent-muted にする
 - [x] Unit 0.x の Cue 判定を長さのしきい値（0.8秒未満）から「等しい長さの対に属さない有音」に変える。Unit 0.5 は文が 0.72秒の対で、Cue と誤判定されて 1-1、1-2、2-Cue、3-Cue になっていたため
 - [x] 選択ユニットが変更されたら、再生を中止し、再生中（選択中）のターンも解除する
+- [x] images/icon.png をこのアプリのアイコンにする
+  - テストリスト
+    - [x] アイコン画像を src/main/resources/images/icon.png に置き、ウィンドウを表示するとステージのアイコンにその画像が設定されていることを確かめる（WindowManager.showWindow）
+    - [x] jpackage の配布物のアイコンにも使う。images/icon.ico（ffmpeg で PNG から変換）、images/icon.icns（ユーザー提供）、Linux は icon.png。pom.xml の OS 別プロファイルで jpackage.icon プロパティに指定
