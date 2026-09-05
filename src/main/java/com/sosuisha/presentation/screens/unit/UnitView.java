@@ -257,7 +257,8 @@ public class UnitView implements View {
             row.ifPresent(
                 playing -> TurnListScroll
                     .firstIndexToShow(
-                        listView.getItems().indexOf(playing), firstVisibleIndexOf(listView)
+                        listView.getItems().indexOf(playing), firstVisibleIndexOf(listView),
+                        listView.getSelectionModel().getSelectedIndex()
                     )
                     .ifPresent(listView::scrollTo)
             );
@@ -271,8 +272,8 @@ public class UnitView implements View {
         return flow.getFirstVisibleCell().getIndex();
     }
 
-    // A click on a row plays its turn. Selection changes do not, because the
-    // selection also follows the playback position.
+    // A click on a row plays its turn. Selection changes do not, so that the
+    // keyboard and the code may move the selection without starting a playback.
     private ListCell<TurnRow> turnCell() {
         var cell = new ListCell<TurnRow>() {
             @Override
