@@ -17,7 +17,9 @@ class JavaSoundAudioDecoderTest {
     // 5.5〜6.5秒 有音
     // 6.5〜9.5秒 無音（3.0秒、シャドーイング用のポーズ）
     // 9.5〜10.5秒 有音
+    // MP3 は WAV を ffmpeg で 128kbps に変換したもの
     private static final Path WAV = Path.of("src/test/resources/audio/tone-with-silences.wav");
+    private static final Path MP3 = Path.of("src/test/resources/audio/tone-with-silences.mp3");
     private static final int SAMPLE_RATE = 44100;
     private static final double DURATION_SECONDS = 10.5;
     private static final int HALF_OF_FULL_SCALE = 16384;
@@ -51,6 +53,16 @@ class JavaSoundAudioDecoderTest {
             HALF_OF_FULL_SCALE,
             maxAmplitude(pcm.samples(), secondsToIndex(0.4), secondsToIndex(0.6)), 1
         );
+    }
+
+    @Test
+    @DisplayName("mp3ファイルをデコードすると、WAVと同じサンプルレートとチャンネル数のPCMが得られる")
+    void decoding_an_mp3_file_gives_pcm_with_the_same_sample_rate_and_channels_as_the_wav()
+        throws Exception {
+        var pcm = new JavaSoundAudioDecoder().decode(MP3);
+
+        assertEquals(SAMPLE_RATE, pcm.sampleRate());
+        assertEquals(1, pcm.channels());
     }
 
     private static int secondsToIndex(double seconds) {
