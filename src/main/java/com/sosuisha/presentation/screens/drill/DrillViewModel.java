@@ -1,7 +1,6 @@
 package com.sosuisha.presentation.screens.drill;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
