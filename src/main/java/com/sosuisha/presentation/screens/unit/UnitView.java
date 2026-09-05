@@ -48,7 +48,7 @@ public class UnitView implements View {
     private static final double LAST_PLAYED_COLUMN_WIDTH = 130;
     private static final String DRILL_START_CLASS = "drill-start";
     private static final String CUE_CLASS = "cue";
-    private static final String PLAYING_CLASS = "playing";
+    private static final String CURRENT_CLASS = "current";
     private static final String ROLE_ICON_COLOR = "rgba(0, 0, 0, 0.6)";
     private static final String FLUSH_CARD_CLASS = "flush";
     private static final String STYLESHEET = "/styles/unit.css";
@@ -178,7 +178,7 @@ public class UnitView implements View {
                                                 .items(viewModel.getTurnRows())
                                                 .cellFactory(_ -> turnCell())
                                                 .vGrowInVBox(Priority.ALWAYS)
-                                                .apply(listView -> followPlayingTurn(listView))
+                                                .apply(listView -> followCurrentTurn(listView))
                                                 .build()
                                         )
                                         .spacing(10)
@@ -230,8 +230,8 @@ public class UnitView implements View {
         return icon;
     }
 
-    private boolean isPlaying(TurnRow row) {
-        return viewModel.playingTurnRowProperty().get().filter(row::equals).isPresent();
+    private boolean isCurrent(TurnRow row) {
+        return viewModel.currentTurnRowProperty().get().filter(row::equals).isPresent();
     }
 
     // The play button pauses while playing and plays otherwise, so its icon
@@ -254,7 +254,7 @@ public class UnitView implements View {
     // The first row of a drill gets a line above it as the boundary of the drill,
     // and a cue is shown in a muted color. The style classes mark what the cell is.
     private void styleTurnCell(ListCell<TurnRow> cell, @Nullable TurnRow row) {
-        cell.getStyleClass().removeAll(DRILL_START_CLASS, CUE_CLASS, PLAYING_CLASS);
+        cell.getStyleClass().removeAll(DRILL_START_CLASS, CUE_CLASS, CURRENT_CLASS);
         var style = new StringBuilder();
         if (row != null && row.startsDrill()) {
             cell.getStyleClass().add(DRILL_START_CLASS);
@@ -266,21 +266,22 @@ public class UnitView implements View {
         if (row != null && row.isCue()) {
             cell.getStyleClass().add(CUE_CLASS);
         }
-        if (row != null && isPlaying(row)) {
-            cell.getStyleClass().add(PLAYING_CLASS);
+        if (row != null && isCurrent(row)) {
+            cell.getStyleClass().add(CURRENT_CLASS);
         }
         cell.setStyle(style.toString());
     }
 
-    // The playing row is marked by its style, not by the selection, so that the row the
-    // learner clicked stays visible as selected. The list scrolls so that the playing row
-    // stays in view (see TurnListScroll), and refreshes its cells to restyle them.
-    private void followPlayingTurn(ListView<TurnRow> listView) {
-        viewModel.playingTurnRowProperty().subscribe(row -> {
+    // The current turn row (playing, or where the playback stopped) is marked by its
+    // style, not by the selection, so that the row the learner clicked stays visible as
+    // selected. The list scrolls so that the current row stays in view (see
+    // TurnListScroll), and refreshes its cells to restyle them.
+    private void followCurrentTurn(ListView<TurnRow> listView) {
+        viewModel.currentTurnRowProperty().subscribe(row -> {
             row.ifPresent(
-                playing -> TurnListScroll
+                current -> TurnListScroll
                     .firstIndexToShow(
-                        listView.getItems().indexOf(playing), firstVisibleIndexOf(listView),
+                        listView.getItems().indexOf(current), firstVisibleIndexOf(listView),
                         listView.getSelectionModel().getSelectedIndex()
                     )
                     .ifPresent(listView::scrollTo)

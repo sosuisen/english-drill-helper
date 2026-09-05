@@ -140,14 +140,14 @@ class UnitViewModelTest {
         viewModel.playOrPause();
         Objects.requireNonNull(listener.get()).positionChanged(Duration.ofMillis(11_000));
         var positionText = viewModel.positionTextProperty().get();
-        var playingRow = viewModel.playingTurnRowProperty().get();
+        var currentRow = viewModel.currentTurnRowProperty().get();
 
         viewModel.playOrPause();
 
         assertTrue(paused.get());
         assertEquals(PlaybackState.PAUSED, viewModel.playbackStateProperty().get());
         assertEquals(positionText, viewModel.positionTextProperty().get());
-        assertEquals(playingRow, viewModel.playingTurnRowProperty().get());
+        assertEquals(currentRow, viewModel.currentTurnRowProperty().get());
     }
 
     @Test
@@ -634,8 +634,79 @@ class UnitViewModelTest {
     }
 
     @Test
-    @DisplayName("再生位置が通知されると、その位置を含むターン（最初のセグメントの開始位置が再生位置以下である最後のターン）が再生中のターン行になる")
-    void the_playing_turn_row_is_the_last_turn_that_starts_at_or_before_the_position() {
+    @DisplayName("ユニットを選んでターン行ができると、現在のターンは先頭ドリルの先頭ターン（ターン行の先頭）になる")
+    void the_current_turn_is_the_first_turn_row_when_a_unit_is_selected() {
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run);
+
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals(
+            Optional.of(viewModel.getTurnRows().get(0)), viewModel.currentTurnRowProperty().get()
+        );
+    }
+
+    @Test
+    @DisplayName("ターンをクリックして再生すると、プレイヤーからの位置の通知を待たずに、現在のターンはそのターンになる")
+    void playing_a_turn_makes_it_the_current_turn_at_once() {
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run);
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        var row = viewModel.getTurnRows().get(7);
+
+        viewModel.playTurn(row);
+
+        assertEquals(Optional.of(row), viewModel.currentTurnRowProperty().get());
+    }
+
+    @Test
+    @DisplayName("再生を停止しても、現在のターンは停止したときのターンのまま変わらない")
+    void stopping_keeps_the_current_turn() {
+        var listener = new AtomicReference<@Nullable PlaybackListener>();
+        var viewModel = newViewModel(
+            List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, listenerCapturingPlayer(listener)
+        );
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.playOrPause();
+        Objects.requireNonNull(listener.get()).positionChanged(Duration.ofMillis(11_000)); // 1-Cue
+
+        viewModel.stop();
+        Objects.requireNonNull(listener.get()).stopped();
+
+        assertEquals(
+            Optional.of(viewModel.getTurnRows().get(2)), viewModel.currentTurnRowProperty().get()
+        );
+    }
+
+    @Test
+    @DisplayName("停止中に playOrPause() すると、ファイルの先頭ではなく現在のターンの開始位置から再生される")
+    void play_or_pause_while_stopped_plays_from_the_start_of_the_current_turn() {
+        var listener = new AtomicReference<@Nullable PlaybackListener>();
+        var playedStart = new AtomicReference<@Nullable Duration>();
+        var player = new NullAudioPlayer() {
+            @Override
+            public void play(Path file, Duration start, PlaybackListener l) {
+                listener.set(l);
+                playedStart.set(start);
+            }
+        };
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, player);
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.playOrPause();
+        Objects.requireNonNull(listener.get()).positionChanged(Duration.ofMillis(11_000)); // 1-Cue
+        viewModel.stop();
+        Objects.requireNonNull(listener.get()).stopped();
+
+        viewModel.playOrPause();
+
+        assertEquals(Duration.ofSeconds(10), playedStart.get()); // 1-Cue starts at 10 s
+    }
+
+    @Test
+    @DisplayName("再生位置が通知されると、その位置を含むターン（最初のセグメントの開始位置が再生位置以下である最後のターン）が現在のターンになる")
+    void the_current_turn_is_the_last_turn_that_starts_at_or_before_the_position() {
         var listener = new AtomicReference<@Nullable PlaybackListener>();
         var viewModel = newViewModel(
             List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, listenerCapturingPlayer(listener)
@@ -648,7 +719,7 @@ class UnitViewModelTest {
         Objects.requireNonNull(listener.get()).positionChanged(Duration.ofMillis(11_000));
 
         assertEquals(
-            Optional.of(viewModel.getTurnRows().get(2)), viewModel.playingTurnRowProperty().get()
+            Optional.of(viewModel.getTurnRows().get(2)), viewModel.currentTurnRowProperty().get()
         );
     }
 
@@ -662,18 +733,18 @@ class UnitViewModelTest {
         viewModel.selectUnit(UNIT_1_1);
         WaitForAsyncUtils.waitForFxEvents();
         viewModel.playTurn(viewModel.getTurnRows().get(2)); // the cue of drill 1 starts at 10 s
-        var rowBefore = viewModel.playingTurnRowProperty().get();
+        var rowBefore = viewModel.currentTurnRowProperty().get();
         var textBefore = viewModel.positionTextProperty().get();
 
         Objects.requireNonNull(listener.get()).positionChanged(Duration.ZERO);
 
-        assertEquals(rowBefore, viewModel.playingTurnRowProperty().get());
+        assertEquals(rowBefore, viewModel.currentTurnRowProperty().get());
         assertEquals(textBefore, viewModel.positionTextProperty().get());
     }
 
     @Test
-    @DisplayName("再生位置がどのターンの開始位置より前（冒頭の無音）のときは、再生中のターン行は空である")
-    void the_playing_turn_row_is_empty_before_the_first_turn() {
+    @DisplayName("再生位置がどのターンの開始位置より前（冒頭の無音）のときは、現在のターンは変わらない（先頭のターンのまま）")
+    void the_current_turn_stays_while_the_position_is_before_the_first_turn() {
         var listener = new AtomicReference<@Nullable PlaybackListener>();
         Function<AudioFile, List<Segment>> withLeadIn = _ -> withLeadingSilence(SEGMENTS_1_1);
         var viewModel = newViewModel(
@@ -685,12 +756,14 @@ class UnitViewModelTest {
 
         Objects.requireNonNull(listener.get()).positionChanged(Duration.ofMillis(300));
 
-        assertEquals(Optional.empty(), viewModel.playingTurnRowProperty().get());
+        assertEquals(
+            Optional.of(viewModel.getTurnRows().get(0)), viewModel.currentTurnRowProperty().get()
+        );
     }
 
     @Test
-    @DisplayName("選択を外してターン一覧が空になると、再生中のターン行も空になる")
-    void the_playing_turn_row_empties_with_the_turn_rows() {
+    @DisplayName("選択を外してターン一覧が空になると、現在のターンも空になる")
+    void the_current_turn_empties_with_the_turn_rows() {
         var listener = new AtomicReference<@Nullable PlaybackListener>();
         var viewModel = newViewModel(
             List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, listenerCapturingPlayer(listener)
@@ -703,7 +776,7 @@ class UnitViewModelTest {
         viewModel.selectUnit(null);
         WaitForAsyncUtils.waitForFxEvents();
 
-        assertEquals(Optional.empty(), viewModel.playingTurnRowProperty().get());
+        assertEquals(Optional.empty(), viewModel.currentTurnRowProperty().get());
     }
 
     private static AudioPlayer listenerCapturingPlayer(
@@ -777,8 +850,8 @@ class UnitViewModelTest {
     }
 
     @Test
-    @DisplayName("再生中に別のユニットを選ぶと、再生中のターン行は空になる")
-    void selecting_another_unit_while_playing_clears_the_playing_turn_row() {
+    @DisplayName("再生中に別のユニットを選ぶと、現在のターンはそのユニットの先頭ターンになる")
+    void selecting_another_unit_while_playing_moves_the_current_turn_to_its_first_turn() {
         var listener = new AtomicReference<@Nullable PlaybackListener>();
         var viewModel = newViewModel(
             List.of(UNIT_1_1, UNIT_1_2), SEGMENT_TABLE, Runnable::run,
@@ -790,8 +863,11 @@ class UnitViewModelTest {
         Objects.requireNonNull(listener.get()).positionChanged(Duration.ofMillis(11_000));
 
         viewModel.selectUnit(UNIT_1_2);
+        WaitForAsyncUtils.waitForFxEvents();
 
-        assertEquals(Optional.empty(), viewModel.playingTurnRowProperty().get());
+        assertEquals(
+            Optional.of(viewModel.getTurnRows().get(0)), viewModel.currentTurnRowProperty().get()
+        );
     }
 
     @Test

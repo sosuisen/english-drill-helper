@@ -417,10 +417,11 @@ class UnitViewTest {
     }
 
     @Test
-    @DisplayName("再生位置が通知されると、再生中のターンの行に playing スタイルが付き、他の行には付かない。位置が進むと前の行から外れる。クリックで選んだ行（選択）は動かない")
-    void the_playing_row_gets_the_playing_style_and_the_selection_stays(FxRobot robot) {
+    @DisplayName("ユニットを選んだ直後は先頭のターン行に current スタイルが付く。再生位置が通知されるとその位置のターンの行に移り、前の行から外れる。クリックで選んだ行（選択）は動かない")
+    void the_current_row_gets_the_current_style_and_the_selection_stays(FxRobot robot) {
         robot.clickOn("011_Unit 1.1.mp3");
         WaitForAsyncUtils.waitForFxEvents();
+        assertTrue(cellOf(robot, "1-1").getStyleClass().contains("current"));
         robot.clickOn("1-1"); // selects and plays the first key sentence
         var listener = Objects.requireNonNull(playbackListener.get());
         @SuppressWarnings("unchecked")
@@ -428,26 +429,26 @@ class UnitViewTest {
 
         robot.interact(() -> listener.positionChanged(Duration.ofSeconds(11))); // inside 1-Cue
         WaitForAsyncUtils.waitForFxEvents();
-        assertTrue(cueCellOf(robot, 1).getStyleClass().contains("playing"));
-        assertFalse(cellOf(robot, "1-1").getStyleClass().contains("playing"));
+        assertTrue(cueCellOf(robot, 1).getStyleClass().contains("current"));
+        assertFalse(cellOf(robot, "1-1").getStyleClass().contains("current"));
 
         robot.interact(() -> listener.positionChanged(Duration.ofSeconds(13))); // inside 1-3
         WaitForAsyncUtils.waitForFxEvents();
-        assertTrue(cellOf(robot, "1-3").getStyleClass().contains("playing"));
-        assertFalse(cueCellOf(robot, 1).getStyleClass().contains("playing"));
+        assertTrue(cellOf(robot, "1-3").getStyleClass().contains("current"));
+        assertFalse(cueCellOf(robot, 1).getStyleClass().contains("current"));
         assertEquals("1-1", listView.getSelectionModel().getSelectedItem().label());
     }
 
     @Test
-    @DisplayName("画面のスタイルシート（unit.css）には、再生中の行（.list-cell.playing）に左端の緑のバーと薄い緑の背景（縞模様や青系の区切りと色相で見分けられる）を描く規則がある")
-    void the_stylesheet_styles_the_playing_row() throws Exception {
+    @DisplayName("画面のスタイルシート（unit.css）には、現在のターンの行（.list-cell.current）に左端の緑のバーと薄い緑の背景（縞模様や青系の区切りと色相で見分けられる）を描く規則がある")
+    void the_stylesheet_styles_the_current_row() throws Exception {
         var css = new String(
             Objects.requireNonNull(getClass().getResourceAsStream("/styles/unit.css"))
                 .readAllBytes(),
             java.nio.charset.StandardCharsets.UTF_8
         );
 
-        assertTrue(css.contains(".list-cell.playing"));
+        assertTrue(css.contains(".list-cell.current"));
         assertTrue(css.contains("-color-success-emphasis"));
         assertTrue(css.contains("-color-success-muted"));
     }

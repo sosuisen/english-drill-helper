@@ -61,7 +61,7 @@ public class UnitViewModel {
     private final ObservableList<TurnRow> turnRows = FXCollections.observableArrayList();
     private final ObservableList<TurnRow> readOnlyTurnRows =
         FXCollections.unmodifiableObservableList(turnRows);
-    private final ReadOnlyObjectWrapper<Optional<TurnRow>> playingTurnRow =
+    private final ReadOnlyObjectWrapper<Optional<TurnRow>> currentTurnRow =
         new ReadOnlyObjectWrapper<>(Optional.empty());
     private final ReadOnlyStringWrapper positionText = new ReadOnlyStringWrapper("");
     private Duration position = Duration.ZERO;
@@ -103,8 +103,9 @@ public class UnitViewModel {
             (ListChangeListener<Segment>) _ -> drills.setAll(drillsOfSelectedUnit())
         );
         drills.addListener((ListChangeListener<Drill>) _ -> turnRows.setAll(turnRowsOf(drills)));
-        turnRows
-            .addListener((ListChangeListener<TurnRow>) _ -> playingTurnRow.set(Optional.empty()));
+        turnRows.addListener(
+            (ListChangeListener<TurnRow>) _ -> currentTurnRow.set(turnRows.stream().findFirst())
+        );
         segments.addListener((ListChangeListener<Segment>) _ -> {
             position = Duration.ZERO;
             updatePositionText();
@@ -112,15 +113,14 @@ public class UnitViewModel {
     }
 
     /**
-     * Returns the row of the turn that is playing: the last turn that starts
-     * at or before the playback position. It is empty while nothing has
-     * played yet, while the position is before the first turn, and when the
-     * turn list changes.
+     * Returns the row of the current turn: the turn the learner is at, playing
+     * or stopped. It is the first turn of the unit until a playback moves on.
+     * It is empty while the unit has no turns.
      *
-     * @return read-only property of the playing turn row
+     * @return read-only property of the current turn row
      */
-    public ReadOnlyObjectProperty<Optional<TurnRow>> playingTurnRowProperty() {
-        return playingTurnRow.getReadOnlyProperty();
+    public ReadOnlyObjectProperty<Optional<TurnRow>> currentTurnRowProperty() {
+        return currentTurnRow.getReadOnlyProperty();
     }
 
     /**
@@ -339,7 +339,10 @@ public class UnitViewModel {
      */
     public void playTurn(TurnRow row) {
         Objects.requireNonNull(row, "row must not be null");
-        selectedUnit.get().ifPresent(unit -> playFrom(unit, startOf(row)));
+        selectedUnit.get().ifPresent(unit -> {
+            currentTurnRow.set(Optional.of(row)); // at once, not only when the position arrives
+            playFrom(unit, startOf(row));
+        });
     }
 
     private Duration startOf(TurnRow row) {
@@ -356,7 +359,7 @@ public class UnitViewModel {
                 if (position.compareTo(start) < 0) { return; }
                 UnitViewModel.this.position = position;
                 updatePositionText();
-                playingTurnRow.set(turnRowAt(position));
+                turnRowAt(position).ifPresent(row -> currentTurnRow.set(Optional.of(row)));
             }
 
             @Override
@@ -397,8 +400,18 @@ public class UnitViewModel {
                 player.resume();
                 playbackState.set(PlaybackState.PLAYING);
             }
-            case STOPPED -> play();
+            case STOPPED -> playCurrentTurn();
         }
+    }
+
+    // The playback goes on from the turn the learner is at; from the beginning
+    // of the file while the unit has no turns.
+    private void playCurrentTurn() {
+        selectedUnit.get().ifPresent(
+            unit -> playFrom(
+                unit, currentTurnRow.get().map(this::startOf).orElse(Duration.ZERO)
+            )
+        );
     }
 
     /**
