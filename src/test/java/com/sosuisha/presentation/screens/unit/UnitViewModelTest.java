@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,6 +31,7 @@ import org.testfx.util.WaitForAsyncUtils;
 import com.sosuisha.domain.model.AudioFile;
 import com.sosuisha.domain.model.Drill;
 import com.sosuisha.domain.model.Segment;
+import com.sosuisha.domain.model.Turn;
 import com.sosuisha.domain.model.Unit;
 import com.sosuisha.domain.repository.NullUnitRepository;
 import com.sosuisha.domain.service.AudioPlayer;
@@ -207,13 +209,10 @@ class UnitViewModelTest {
         };
     }
 
-    // セグメント読み込みのテスト。ローダーは指紋ごとの固定の対応表、Executor は同期実行または手動実行
-    private static final List<Segment> SEGMENTS_0_1 = List.of(
-        new Segment(0, Duration.ZERO, Duration.ofMillis(1000), Segment.Kind.SOUND),
-        new Segment(1, Duration.ofMillis(1000), Duration.ofMillis(3000), Segment.Kind.SILENCE)
-    );
-    private static final List<Segment> SEGMENTS_0_2 =
-        List.of(new Segment(0, Duration.ZERO, Duration.ofMillis(2500), Segment.Kind.SOUND));
+    // セグメント読み込みのテスト。ローダーは指紋ごとの固定の対応表、Executor は同期実行または手動実行。
+    // セグメントは、ハノンの構成（1ユニット5ドリル）に合うよう有音・無音を5組にする
+    private static final List<Segment> SEGMENTS_0_1 = pairs(5, Duration.ofSeconds(1));
+    private static final List<Segment> SEGMENTS_0_2 = pairs(5, Duration.ofSeconds(2));
     private static final Function<AudioFile, List<Segment>> SEGMENT_TABLE = audioFile -> Objects
         .requireNonNull(
             Map.of(
@@ -303,8 +302,21 @@ class UnitViewModelTest {
         viewModel.selectUnit(null);
         WaitForAsyncUtils.waitForFxEvents();
 
-        assertEquals(List.of(new Drill(List.of(0, 1))), drillsOfSelected);
+        assertEquals(5, drillsOfSelected.size());
+        assertEquals(
+            new Drill(1, List.of(new Turn(1, 0, Optional.of(1)))), drillsOfSelected.get(0)
+        );
         assertEquals(List.of(), viewModel.getDrills());
+    }
+
+    /** Sound and silence pairs of the given length each, numbered from zero. */
+    private static List<Segment> pairs(int count, Duration each) {
+        var segments = new ArrayList<Segment>();
+        for (var i = 0; i < count * 2; i++) {
+            var kind = i % 2 == 0 ? Segment.Kind.SOUND : Segment.Kind.SILENCE;
+            segments.add(new Segment(i, each.multipliedBy(i), each, kind));
+        }
+        return segments;
     }
 
     private static UnitViewModel newViewModel(

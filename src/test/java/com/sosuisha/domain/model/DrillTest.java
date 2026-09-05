@@ -6,53 +6,90 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.sosuisha.domain.exception.IrregularUnitException;
+
 class DrillTest {
     @Test
-    @DisplayName("ドリルは、含まれるセグメントのインデックスのリストを持つ")
-    void drill_holds_the_indexes_of_its_segments() {
-        var drill = new Drill(List.of(2, 3));
+    @DisplayName("ドリルは、ユニット内の番号とターンのリストを持つ")
+    void drill_holds_a_number_and_its_turns() {
+        var turns = List.of(new Turn(1, 0, Optional.of(1)), new Turn(2, 2, Optional.of(3)));
 
-        assertEquals(List.of(2, 3), drill.segmentIndexes());
+        var drill = new Drill(1, turns);
+
+        assertEquals(1, drill.number());
+        assertEquals(turns, drill.turns());
     }
 
     @Test
-    @DisplayName("セグメントを1つも含まないドリルは作れない")
-    void drill_without_segments_cannot_be_created() {
-        assertThrows(IllegalArgumentException.class, () -> new Drill(List.of()));
+    @DisplayName("番号が1未満のドリルや、ターンを1つも含まないドリルは作れない")
+    void drill_with_a_number_below_one_or_without_turns_cannot_be_created() {
+        var turns = List.of(new Turn(1, 0, Optional.of(1)));
+
+        assertThrows(IllegalArgumentException.class, () -> new Drill(0, turns));
+        assertThrows(IllegalArgumentException.class, () -> new Drill(1, List.of()));
     }
 
     @Test
-    @DisplayName("有音・無音・有音・無音のセグメント列は、[0,1] と [2,3] の2つのドリルになる")
-    void sound_silence_sound_silence_becomes_two_drills_of_a_sound_and_a_silence() {
-        var segments = segments(
-            Segment.Kind.SOUND, Segment.Kind.SILENCE, Segment.Kind.SOUND, Segment.Kind.SILENCE
-        );
+    @DisplayName("有音・無音が5組（10セグメント）の列は、1ターンずつの5つのドリルになる。Drill 1 の Turn 1 は [0,1]、Drill 5 の Turn 1 は [8,9]")
+    void five_pairs_become_five_drills_of_one_turn_each() {
+        var drills = Drill.drillsOf(pairs(5));
 
+        assertEquals(5, drills.size());
+        assertEquals(new Drill(1, List.of(new Turn(1, 0, Optional.of(1)))), drills.get(0));
+        assertEquals(new Drill(5, List.of(new Turn(1, 8, Optional.of(9)))), drills.get(4));
+    }
+
+    @Test
+    @DisplayName("有音・無音が10組（20セグメント）の列は、2ターンずつの5つのドリルになる。Drill 1 は [0,1]・[2,3]、Drill 2 は [4,5]・[6,7]")
+    void ten_pairs_become_five_drills_of_two_turns_each() {
+        var drills = Drill.drillsOf(pairs(10));
+
+        assertEquals(5, drills.size());
         assertEquals(
-            List.of(new Drill(List.of(0, 1)), new Drill(List.of(2, 3))), Drill.drillsOf(segments)
+            new Drill(1, List.of(new Turn(1, 0, Optional.of(1)), new Turn(2, 2, Optional.of(3)))),
+            drills.get(0)
+        );
+        assertEquals(
+            new Drill(2, List.of(new Turn(1, 4, Optional.of(5)), new Turn(2, 6, Optional.of(7)))),
+            drills.get(1)
         );
     }
 
     @Test
-    @DisplayName("先頭が無音のセグメント列（無音・有音・無音）は、先頭の無音を捨てて [1,2] の1つのドリルになる")
+    @DisplayName("先頭が無音の列（無音 + 有音・無音5組）は、先頭の無音を捨てて5つのドリルになる。Drill 1 の Turn 1 は [1,2]")
     void a_leading_silence_is_dropped() {
-        var segments = segments(Segment.Kind.SILENCE, Segment.Kind.SOUND, Segment.Kind.SILENCE);
+        var segments = new ArrayList<Segment>();
+        segments.add(new Segment(0, Duration.ZERO, Duration.ofSeconds(1), Segment.Kind.SILENCE));
+        segments.addAll(pairs(5, 1));
 
-        assertEquals(List.of(new Drill(List.of(1, 2))), Drill.drillsOf(segments));
+        var drills = Drill.drillsOf(segments);
+
+        assertEquals(5, drills.size());
+        assertEquals(new Drill(1, List.of(new Turn(1, 1, Optional.of(2)))), drills.get(0));
     }
 
     @Test
-    @DisplayName("末尾が有音で終わるセグメント列（有音・無音・有音）は、[0,1] と [2] の2つのドリルになる。最後は無音なしのドリル")
-    void a_trailing_sound_becomes_a_drill_without_silence() {
-        var segments = segments(Segment.Kind.SOUND, Segment.Kind.SILENCE, Segment.Kind.SOUND);
+    @DisplayName("末尾が有音で終わる列（有音・無音4組 + 有音）は5つのドリルになり、Drill 5 の Turn 1 は無音なし（[8] のみ）")
+    void a_trailing_sound_makes_the_last_turn_without_silence() {
+        var segments = new ArrayList<Segment>(pairs(4));
+        segments
+            .add(new Segment(8, Duration.ofSeconds(8), Duration.ofSeconds(1), Segment.Kind.SOUND));
 
-        assertEquals(
-            List.of(new Drill(List.of(0, 1)), new Drill(List.of(2))), Drill.drillsOf(segments)
-        );
+        var drills = Drill.drillsOf(segments);
+
+        assertEquals(5, drills.size());
+        assertEquals(new Drill(5, List.of(new Turn(1, 8, Optional.empty()))), drills.get(4));
+    }
+
+    @Test
+    @DisplayName("有音・無音が6組（12セグメント）の列は5で割り切れないので、IrregularUnitExceptionになる")
+    void pairs_that_do_not_split_into_five_drills_are_rejected() {
+        assertThrows(IrregularUnitException.class, () -> Drill.drillsOf(pairs(6)));
     }
 
     @Test
@@ -61,11 +98,17 @@ class DrillTest {
         assertEquals(List.of(), Drill.drillsOf(List.of()));
     }
 
-    /** Segments of one second each, numbered from zero, with the given kinds. */
-    private static List<Segment> segments(Segment.Kind... kinds) {
+    /** Sound and silence pairs of one second each, numbered from zero. */
+    private static List<Segment> pairs(int count) {
+        return pairs(count, 0);
+    }
+
+    /** Sound and silence pairs of one second each, numbered from the first index. */
+    private static List<Segment> pairs(int count, int firstIndex) {
         var segments = new ArrayList<Segment>();
-        for (var i = 0; i < kinds.length; i++) {
-            segments.add(new Segment(i, Duration.ofSeconds(i), Duration.ofSeconds(1), kinds[i]));
+        for (var i = firstIndex; i < firstIndex + count * 2; i++) {
+            var kind = (i - firstIndex) % 2 == 0 ? Segment.Kind.SOUND : Segment.Kind.SILENCE;
+            segments.add(new Segment(i, Duration.ofSeconds(i), Duration.ofSeconds(1), kind));
         }
         return segments;
     }
