@@ -192,24 +192,6 @@ class UnitViewTest {
     }
 
     @Test
-    @DisplayName("再生中のターン行が変わると、ターン一覧の選択行がそれに追従する。この選択変更では再生は始まらない")
-    void the_selected_turn_row_follows_the_playing_turn_without_starting_a_playback(
-        FxRobot robot) {
-        robot.clickOn("011_Unit 1.1.mp3");
-        WaitForAsyncUtils.waitForFxEvents();
-        robot.clickOn("#play");
-        var listener = Objects.requireNonNull(playbackListener.get());
-
-        robot.interact(() -> listener.positionChanged(Duration.ofSeconds(11))); // inside 1-Cue
-        WaitForAsyncUtils.waitForFxEvents();
-
-        @SuppressWarnings("unchecked")
-        ListView<TurnRow> listView = robot.lookup("#turns").queryAs(ListView.class);
-        assertEquals("1-Cue", listView.getSelectionModel().getSelectedItem().label());
-        assertEquals(1, playCount.get());
-    }
-
-    @Test
     @DisplayName("ユニット一覧とターン一覧は、行の高さを詰めた AtlantaFX の dense スタイルである")
     void the_unit_list_and_the_turn_list_use_the_dense_style(FxRobot robot) {
         assertTrue(robot.lookup("#units").query().getStyleClass().contains(Styles.DENSE));
@@ -409,6 +391,42 @@ class UnitViewTest {
 
         verifyThat("#position", LabeledMatchers.hasText(viewModel.positionTextProperty().get()));
         assertEquals("00:00 / 02:23", viewModel.positionTextProperty().get());
+    }
+
+    @Test
+    @DisplayName("再生位置が通知されると、再生中のターンの行に playing スタイルが付き、他の行には付かない。位置が進むと前の行から外れる。クリックで選んだ行（選択）は動かない")
+    void the_playing_row_gets_the_playing_style_and_the_selection_stays(FxRobot robot) {
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+        robot.clickOn("1-1 [Key]"); // selects and plays the first key sentence
+        var listener = Objects.requireNonNull(playbackListener.get());
+        @SuppressWarnings("unchecked")
+        ListView<TurnRow> listView = robot.lookup("#turns").queryAs(ListView.class);
+
+        robot.interact(() -> listener.positionChanged(Duration.ofSeconds(11))); // inside 1-Cue
+        WaitForAsyncUtils.waitForFxEvents();
+        assertTrue(cellOf(robot, "1-Cue").getStyleClass().contains("playing"));
+        assertFalse(cellOf(robot, "1-1 [Key]").getStyleClass().contains("playing"));
+
+        robot.interact(() -> listener.positionChanged(Duration.ofSeconds(13))); // inside 1-3
+        WaitForAsyncUtils.waitForFxEvents();
+        assertTrue(cellOf(robot, "1-3").getStyleClass().contains("playing"));
+        assertFalse(cellOf(robot, "1-Cue").getStyleClass().contains("playing"));
+        assertEquals("1-1 [Key]", listView.getSelectionModel().getSelectedItem().label());
+    }
+
+    @Test
+    @DisplayName("画面のスタイルシート（unit.css）には、再生中の行（.list-cell.playing）に左端の青いバーと薄い青の背景を描く規則がある")
+    void the_stylesheet_styles_the_playing_row() throws Exception {
+        var css = new String(
+            Objects.requireNonNull(getClass().getResourceAsStream("/styles/unit.css"))
+                .readAllBytes(),
+            java.nio.charset.StandardCharsets.UTF_8
+        );
+
+        assertTrue(css.contains(".list-cell.playing"));
+        assertTrue(css.contains("-color-accent-emphasis"));
+        assertTrue(css.contains("-color-accent-subtle"));
     }
 
     @Test

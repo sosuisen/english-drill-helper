@@ -46,6 +46,7 @@ public class UnitView implements View {
     private static final double LAST_PLAYED_COLUMN_WIDTH = 130;
     private static final String DRILL_START_CLASS = "drill-start";
     private static final String CUE_CLASS = "cue";
+    private static final String PLAYING_CLASS = "playing";
     private static final String FLUSH_CARD_CLASS = "flush";
     private static final String STYLESHEET = "/styles/unit.css";
     /** Gap between the window edge and the panes, and between the panes. */
@@ -217,6 +218,10 @@ public class UnitView implements View {
         return card;
     }
 
+    private boolean isPlaying(TurnRow row) {
+        return viewModel.playingTurnRowProperty().get().filter(row::equals).isPresent();
+    }
+
     // Playing and stopping make sense only while a unit is selected.
     private void disableWithoutSelection(Button button) {
         button.disableProperty().bind(viewModel.unitSelectedProperty().not());
@@ -224,8 +229,8 @@ public class UnitView implements View {
 
     // The first row of a drill gets a line above it as the boundary of the drill,
     // and a cue is shown in a muted color. The style classes mark what the cell is.
-    private static void styleTurnCell(ListCell<TurnRow> cell, @Nullable TurnRow row) {
-        cell.getStyleClass().removeAll(DRILL_START_CLASS, CUE_CLASS);
+    private void styleTurnCell(ListCell<TurnRow> cell, @Nullable TurnRow row) {
+        cell.getStyleClass().removeAll(DRILL_START_CLASS, CUE_CLASS, PLAYING_CLASS);
         var style = new StringBuilder();
         if (row != null && row.startsDrill()) {
             cell.getStyleClass().add(DRILL_START_CLASS);
@@ -238,20 +243,26 @@ public class UnitView implements View {
             cell.getStyleClass().add(CUE_CLASS);
             style.append("-fx-text-fill: -color-accent-muted; ");
         }
+        if (row != null && isPlaying(row)) {
+            cell.getStyleClass().add(PLAYING_CLASS);
+        }
         cell.setStyle(style.toString());
     }
 
-    // The selected row follows the playing turn; selecting a row never plays it.
-    // The list scrolls so that the playing row stays in view (see TurnListScroll).
+    // The playing row is marked by its style, not by the selection, so that the row the
+    // learner clicked stays visible as selected. The list scrolls so that the playing row
+    // stays in view (see TurnListScroll), and refreshes its cells to restyle them.
     private void followPlayingTurn(ListView<TurnRow> listView) {
-        viewModel.playingTurnRowProperty().subscribe(row -> row.ifPresentOrElse(playing -> {
-            listView.getSelectionModel().select(playing);
-            TurnListScroll
-                .firstIndexToShow(
-                    listView.getItems().indexOf(playing), firstVisibleIndexOf(listView)
-                )
-                .ifPresent(listView::scrollTo);
-        }, listView.getSelectionModel()::clearSelection));
+        viewModel.playingTurnRowProperty().subscribe(row -> {
+            row.ifPresent(
+                playing -> TurnListScroll
+                    .firstIndexToShow(
+                        listView.getItems().indexOf(playing), firstVisibleIndexOf(listView)
+                    )
+                    .ifPresent(listView::scrollTo)
+            );
+            listView.refresh();
+        });
     }
 
     private static int firstVisibleIndexOf(ListView<TurnRow> listView) {

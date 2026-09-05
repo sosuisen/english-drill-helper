@@ -8,3 +8,10 @@
 .card.flush > .container > .body {
   -fx-padding: 0;
 }
+
+/* The turn that is playing: a bar at the left edge and a light tint, apart from the selection. */
+.list-cell.playing {
+  -fx-background-color: -color-accent-subtle;
+  -fx-border-color: transparent transparent transparent -color-accent-emphasis;
+  -fx-border-width: 0 0 0 3px;
+}
