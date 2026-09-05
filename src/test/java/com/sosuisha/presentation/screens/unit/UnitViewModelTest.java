@@ -213,10 +213,13 @@ class UnitViewModelTest {
     );
     private static final List<Segment> SEGMENTS_0_2 =
         List.of(new Segment(Duration.ofMillis(2500), Segment.Kind.SOUND));
-    private static final Function<AudioFile, List<Segment>> SEGMENT_TABLE = audioFile -> Map.of(
-        UNIT_0_1.audioFile().fingerprint(), SEGMENTS_0_1,
-        UNIT_0_2.audioFile().fingerprint(), SEGMENTS_0_2
-    ).get(audioFile.fingerprint());
+    private static final Function<AudioFile, List<Segment>> SEGMENT_TABLE = audioFile -> Objects
+        .requireNonNull(
+            Map.of(
+                UNIT_0_1.audioFile().fingerprint(), SEGMENTS_0_1,
+                UNIT_0_2.audioFile().fingerprint(), SEGMENTS_0_2
+            ).get(audioFile.fingerprint())
+        );
 
     @Test
     @DisplayName("ユニットを選ぶと、そのユニットのセグメントがローダーで読み込まれ、セグメント一覧に入る")
