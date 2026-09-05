@@ -129,7 +129,7 @@ class SegmentDetectorTest {
     @Test
     @DisplayName("音量がしきい値ちょうどのウィンドウは有音、それより小さいウィンドウは無音として扱う。しきい値の境界は「未満」である")
     void window_exactly_at_the_threshold_is_sound_and_a_quieter_window_is_silence() {
-        var thresholdDbfs = Loudness.dbfsOf(constant(0.02, HALF_OF_FULL_SCALE));
+        var thresholdDbfs = SegmentDetector.Loudness.dbfsOf(constant(0.02, HALF_OF_FULL_SCALE));
         var parameters = new SegmentDetectionParameters(
             Duration.ofMillis(20), thresholdDbfs, Duration.ofSeconds(1)
         );

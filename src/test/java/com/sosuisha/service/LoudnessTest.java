@@ -15,7 +15,7 @@ class LoudnessTest {
         var samples = new short[882];
         Arrays.fill(samples, Short.MAX_VALUE);
 
-        assertEquals(0.0, Loudness.dbfsOf(samples), 1e-9);
+        assertEquals(0.0, SegmentDetector.Loudness.dbfsOf(samples), 1e-9);
     }
 
     @Test
@@ -23,7 +23,7 @@ class LoudnessTest {
     void window_of_zero_samples_is_negative_infinity_dbfs() {
         var samples = new short[882];
 
-        assertEquals(Double.NEGATIVE_INFINITY, Loudness.dbfsOf(samples));
+        assertEquals(Double.NEGATIVE_INFINITY, SegmentDetector.Loudness.dbfsOf(samples));
     }
 
     @Test
@@ -34,12 +34,14 @@ class LoudnessTest {
             samples[i] = (short) (i % 2 == 0 ? 16384 : -16384);
         }
 
-        assertEquals(-6.02, Loudness.dbfsOf(samples), 0.01);
+        assertEquals(-6.02, SegmentDetector.Loudness.dbfsOf(samples), 0.01);
     }
 
     @Test
     @DisplayName("空のウィンドウの音量は求められない")
     void loudness_of_an_empty_window_cannot_be_measured() {
-        assertThrows(IllegalArgumentException.class, () -> Loudness.dbfsOf(new short[0]));
+        assertThrows(
+            IllegalArgumentException.class, () -> SegmentDetector.Loudness.dbfsOf(new short[0])
+        );
     }
 }
