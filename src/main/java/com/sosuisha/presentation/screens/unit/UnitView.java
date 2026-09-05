@@ -25,7 +25,7 @@ import javafx.scene.layout.Priority;
 public class UnitView implements View {
     private static final String TITLE = "English Drill Helper";
     private static final double WIDTH = 480;
-    private static final double HEIGHT = 240;
+    private static final double HEIGHT = 640;
 
     private final UnitViewModel viewModel;
     private final Scene scene;
