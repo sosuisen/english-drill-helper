@@ -1,5 +1,6 @@
 package com.sosuisha.domain.model;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -17,6 +18,14 @@ class UnitTest {
         assertTrue(unit("010_Unit 0.10.mp3").isIntroduction());
         assertFalse(unit("050_Unit 3.3_slow.mp3").isIntroduction());
         assertFalse(unit("100_Unit 10.2.mp3").isIntroduction());
+    }
+
+    @Test
+    @DisplayName("ユニットの表示名は、ファイル名の先頭の「数字_」と末尾の拡張子を除いた名前である。番号や拡張子がないファイル名はそのまま")
+    void the_title_of_a_unit_is_its_file_name_without_the_number_prefix_and_the_extension() {
+        assertEquals("Unit 1.1_slow", unit("011_Unit 1.1_slow.mp3").title());
+        assertEquals("Unit 0.1", unit("001_Unit 0.1.mp3").title());
+        assertEquals("Unit 1.1", unit("Unit 1.1").title());
     }
 
     private static Unit unit(String fileName) {

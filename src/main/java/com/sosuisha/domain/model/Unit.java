@@ -3,6 +3,7 @@ package com.sosuisha.domain.model;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * A unit: an audio file together with its record.
@@ -12,6 +13,9 @@ import java.util.Optional;
  */
 public record Unit(AudioFile audioFile, Optional<Instant> lastPlayedAt) {
     private static final String INTRODUCTION_UNIT_MARK = "Unit 0.";
+    private static final Pattern NUMBER_PREFIX = Pattern.compile("^\\d+_");
+    private static final Pattern AUDIO_EXTENSION =
+        Pattern.compile("\\.(mp3|wav)$", Pattern.CASE_INSENSITIVE);
 
     /**
      * Creates the unit.
@@ -30,6 +34,18 @@ public record Unit(AudioFile audioFile, Optional<Instant> lastPlayedAt) {
      */
     public String fileName() {
         return audioFile.fileName();
+    }
+
+    /**
+     * Returns the name shown for the unit: the file name without the number
+     * that orders the files (such as {@code 011_}) and without the audio
+     * extension.
+     *
+     * @return the title, such as {@code Unit 1.1_slow}
+     */
+    public String title() {
+        var withoutNumber = NUMBER_PREFIX.matcher(fileName()).replaceFirst("");
+        return AUDIO_EXTENSION.matcher(withoutNumber).replaceFirst("");
     }
 
     /**
