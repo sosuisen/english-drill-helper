@@ -390,9 +390,25 @@ class UnitViewTest {
     }
 
     @Test
-    @DisplayName("unitPane の header（音声フォルダのパス）は、drillPane の見出しと揃うよう TITLE_3 のスタイルを持つ")
-    void the_unit_pane_header_is_styled_like_the_drill_pane_heading(FxRobot robot) {
-        assertTrue(robot.lookup("#audioFolder").query().getStyleClass().contains(Styles.TITLE_3));
+    @DisplayName("unitPane の header（音声フォルダのパス）は、drillPane の見出しと揃うよう TITLE_3 のスタイルを持ち、文字色は Cue の行と同じ薄い色（-color-accent-muted）である")
+    void the_unit_pane_header_is_a_heading_in_the_cue_color(FxRobot robot) {
+        var header = robot.lookup("#audioFolder").query();
+
+        assertTrue(header.getStyleClass().contains(Styles.TITLE_3));
+        assertTrue(header.getStyle().contains("-fx-text-fill: -color-accent-muted"));
+    }
+
+    @Test
+    @DisplayName("Play/Stop の並びの右に再生位置のラベル（ID position）があり、ユニットを選ぶと ViewModel の位置の文字列（00:00 / 総時間）が表示される")
+    void the_position_label_next_to_the_buttons_shows_the_position_text(FxRobot robot) {
+        var playback = robot.lookup("#playback").query();
+        assertTrue(robot.from(playback).lookup("#position").tryQuery().isPresent());
+
+        robot.clickOn("011_Unit 1.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+
+        verifyThat("#position", LabeledMatchers.hasText(viewModel.positionTextProperty().get()));
+        assertEquals("00:00 / 02:23", viewModel.positionTextProperty().get());
     }
 
     @Test

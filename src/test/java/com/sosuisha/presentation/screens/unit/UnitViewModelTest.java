@@ -576,6 +576,46 @@ class UnitViewModelTest {
         assertEquals(Optional.empty(), viewModel.playingTurnRowProperty().get());
     }
 
+    @Test
+    @DisplayName("ユニットを選ぶと、再生位置の文字列は「00:00 / 総時間」になる。総時間はセグメント列の末尾の終了時刻（合成ユニットは有音93秒 + 無音50秒 = 143秒）")
+    void selecting_a_unit_shows_zero_over_the_total_length_of_its_segments() {
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run);
+
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals("00:00 / 02:23", viewModel.positionTextProperty().get());
+    }
+
+    @Test
+    @DisplayName("再生位置が通知されると、文字列の前半がその位置になる。秒は切り捨て（83.9秒 → 01:23）")
+    void a_reported_position_updates_the_first_half_of_the_position_text() {
+        var listener = new AtomicReference<@Nullable PlaybackListener>();
+        var viewModel = newViewModel(
+            List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, listenerCapturingPlayer(listener)
+        );
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.play();
+
+        Objects.requireNonNull(listener.get()).positionChanged(Duration.ofMillis(83_900));
+
+        assertEquals("01:23 / 02:23", viewModel.positionTextProperty().get());
+    }
+
+    @Test
+    @DisplayName("選択を外すと、再生位置の文字列は空になる")
+    void clearing_the_selection_empties_the_position_text() {
+        var viewModel = newViewModel(List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run);
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        viewModel.selectUnit(null);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals("", viewModel.positionTextProperty().get());
+    }
+
     /** What a player was asked to play: the file and the start position. */
     private record Playback(Path file, Duration start) {
     }

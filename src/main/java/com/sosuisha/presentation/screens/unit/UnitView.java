@@ -21,6 +21,7 @@ import io.github.sosuisen.jfxbuilder.graphics.HBoxBuilder;
 import io.github.sosuisen.jfxbuilder.graphics.SceneBuilder;
 import io.github.sosuisen.jfxbuilder.graphics.VBoxBuilder;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -104,6 +105,9 @@ public class UnitView implements View {
                                     LabelBuilder.create()
                                         .id("audioFolder")
                                         .addStyleClass(Styles.TITLE_3)
+                                        .style("-fx-text-fill: -color-accent-muted;") // as light as
+                                                                                      // the cue
+                                                                                      // rows
                                         .text(viewModel.getAudioFolderText())
                                         .build(),
                                     TableViewBuilder.<Unit>create()
@@ -152,9 +156,19 @@ public class UnitView implements View {
                                                         .addStyleClass(Styles.BUTTON_ICON)
                                                         .onAction(_ -> viewModel.stop())
                                                         .apply(this::disableWithoutSelection)
+                                                        .build(),
+                                                    LabelBuilder.create()
+                                                        .id("position")
+                                                        .addStyleClass(Styles.TEXT_MUTED)
+                                                        .textPropertyApply(
+                                                            text -> text.bind(
+                                                                viewModel.positionTextProperty()
+                                                            )
+                                                        )
                                                         .build()
                                                 )
                                                 .id("playback")
+                                                .alignment(Pos.CENTER_LEFT)
                                                 .spacing(10)
                                                 .padding(new Insets(0, PANE_GAP, 0, PANE_GAP))
                                                 .build(),

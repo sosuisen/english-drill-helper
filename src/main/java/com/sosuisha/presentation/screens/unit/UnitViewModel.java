@@ -63,6 +63,8 @@ public class UnitViewModel {
         FXCollections.unmodifiableObservableList(turnRows);
     private final ReadOnlyObjectWrapper<Optional<TurnRow>> playingTurnRow =
         new ReadOnlyObjectWrapper<>(Optional.empty());
+    private final ReadOnlyStringWrapper positionText = new ReadOnlyStringWrapper("");
+    private Duration position = Duration.ZERO;
     private final AudioPlayer player;
     private final UnitRepository repository;
     private final Clock clock;
@@ -103,6 +105,10 @@ public class UnitViewModel {
         drills.addListener((ListChangeListener<Drill>) _ -> turnRows.setAll(turnRowsOf(drills)));
         turnRows
             .addListener((ListChangeListener<TurnRow>) _ -> playingTurnRow.set(Optional.empty()));
+        segments.addListener((ListChangeListener<Segment>) _ -> {
+            position = Duration.ZERO;
+            updatePositionText();
+        });
     }
 
     /**
@@ -115,6 +121,31 @@ public class UnitViewModel {
      */
     public ReadOnlyObjectProperty<Optional<TurnRow>> playingTurnRowProperty() {
         return playingTurnRow.getReadOnlyProperty();
+    }
+
+    /**
+     * Returns the playback position over the length of the selected unit, as
+     * {@code mm:ss / mm:ss}. It is an empty string while no unit is selected.
+     *
+     * @return read-only string property of the position text
+     */
+    public ReadOnlyStringProperty positionTextProperty() {
+        return positionText.getReadOnlyProperty();
+    }
+
+    private void updatePositionText() {
+        if (segments.isEmpty()) {
+            positionText.set("");
+            return;
+        }
+        var last = segments.getLast();
+        var total = last.start().plus(last.duration());
+        positionText.set(minutesAndSeconds(position) + " / " + minutesAndSeconds(total));
+    }
+
+    private static String minutesAndSeconds(Duration duration) {
+        var seconds = duration.toSeconds();
+        return String.format("%02d:%02d", seconds / 60, seconds % 60);
     }
 
     private Optional<TurnRow> turnRowAt(Duration position) {
@@ -301,6 +332,8 @@ public class UnitViewModel {
         player.play(unit.audioFile().path(), start, new PlaybackListener() {
             @Override
             public void positionChanged(Duration position) {
+                UnitViewModel.this.position = position;
+                updatePositionText();
                 playingTurnRow.set(turnRowAt(position));
             }
 
