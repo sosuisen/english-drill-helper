@@ -12,6 +12,7 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+import com.sosuisha.domain.exception.AudioDecodeException;
 import com.sosuisha.domain.model.PcmAudio;
 
 /**
@@ -34,11 +35,19 @@ public class JavaSoundAudioDecoder {
      * @param file audio file to decode
      * @return the decoded PCM audio
      * @throws NullPointerException if file is null
-     * @throws IOException if the file cannot be read
-     * @throws UnsupportedAudioFileException if the format of the file is not supported
+     * @throws AudioDecodeException if the file cannot be read or its format is not supported
      */
-    public PcmAudio decode(Path file) throws IOException, UnsupportedAudioFileException {
+    public PcmAudio decode(Path file) throws AudioDecodeException {
         Objects.requireNonNull(file, "file must not be null");
+        try {
+            return decodeOrThrow(file);
+        } catch (IOException | UnsupportedAudioFileException e) {
+            throw new AudioDecodeException("Could not decode the audio file: " + file, e);
+        }
+    }
+
+    private static PcmAudio decodeOrThrow(Path file)
+        throws IOException, UnsupportedAudioFileException {
         try (
             var in = new BufferedInputStream(Files.newInputStream(file));
             var encoded = AudioSystem.getAudioInputStream(in);

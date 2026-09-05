@@ -1,12 +1,18 @@
 package com.sosuisha.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import com.sosuisha.domain.exception.AudioDecodeException;
 
 class JavaSoundAudioDecoderTest {
     // テスト用音声の仕様（helpers/generate-test-audio.sh で生成）
@@ -27,8 +33,7 @@ class JavaSoundAudioDecoderTest {
 
     @Test
     @DisplayName("WAVファイルをデコードすると、元のサンプルレートとチャンネル数のPCMが得られる")
-    void decoding_a_wav_file_gives_pcm_with_the_original_sample_rate_and_channels()
-        throws Exception {
+    void decoding_a_wav_file_gives_pcm_with_the_original_sample_rate_and_channels() {
         var pcm = new JavaSoundAudioDecoder().decode(WAV);
 
         assertEquals(SAMPLE_RATE, pcm.sampleRate());
@@ -37,7 +42,7 @@ class JavaSoundAudioDecoderTest {
 
     @Test
     @DisplayName("WAVファイルをデコードすると、サンプル数がファイルの長さに一致する（10.5秒 × 44100）")
-    void decoding_a_wav_file_gives_as_many_samples_as_the_length_of_the_file() throws Exception {
+    void decoding_a_wav_file_gives_as_many_samples_as_the_length_of_the_file() {
         var pcm = new JavaSoundAudioDecoder().decode(WAV);
 
         assertEquals(secondsToIndex(DURATION_SECONDS), pcm.samples().length);
@@ -45,8 +50,7 @@ class JavaSoundAudioDecoderTest {
 
     @Test
     @DisplayName("デコードしたPCMのサンプル値は時間軸と対応する。2.5秒（無音）のサンプルはゼロで、0.4〜0.6秒（有音）の最大振幅はフルスケールの半分である")
-    void samples_of_the_decoded_pcm_follow_the_time_axis_silence_is_zero_and_sound_is_at_half_of_full_scale()
-        throws Exception {
+    void samples_of_the_decoded_pcm_follow_the_time_axis_silence_is_zero_and_sound_is_at_half_of_full_scale() {
         var pcm = new JavaSoundAudioDecoder().decode(WAV);
 
         assertEquals(0, pcm.samples()[secondsToIndex(2.5)]);
@@ -58,8 +62,7 @@ class JavaSoundAudioDecoderTest {
 
     @Test
     @DisplayName("mp3ファイルをデコードすると、WAVと同じサンプルレートとチャンネル数のPCMが得られる")
-    void decoding_an_mp3_file_gives_pcm_with_the_same_sample_rate_and_channels_as_the_wav()
-        throws Exception {
+    void decoding_an_mp3_file_gives_pcm_with_the_same_sample_rate_and_channels_as_the_wav() {
         var pcm = new JavaSoundAudioDecoder().decode(MP3);
 
         assertEquals(SAMPLE_RATE, pcm.sampleRate());
@@ -68,8 +71,7 @@ class JavaSoundAudioDecoderTest {
 
     @Test
     @DisplayName("mp3ファイルをデコードしたPCMはファイル全体を含む。サンプル数は10.5秒分か、エンコーダ遅延の分（0.1秒未満）だけ多い")
-    void decoding_an_mp3_file_gives_the_whole_file_with_at_most_the_encoder_delay_in_extra_samples()
-        throws Exception {
+    void decoding_an_mp3_file_gives_the_whole_file_with_at_most_the_encoder_delay_in_extra_samples() {
         var pcm = new JavaSoundAudioDecoder().decode(MP3);
 
         var expected = secondsToIndex(DURATION_SECONDS);
@@ -78,6 +80,18 @@ class JavaSoundAudioDecoderTest {
             actual >= expected && actual < expected + secondsToIndex(0.1),
             "samples: " + actual + ", expected: " + expected
         );
+    }
+
+    @Test
+    @DisplayName("存在しないファイルや対応外の形式のファイルをデコードすると、AudioDecodeExceptionになる")
+    void decoding_a_missing_file_or_an_unsupported_file_throws_audio_decode_exception(
+        @TempDir Path folder) throws IOException {
+        var missing = folder.resolve("missing.mp3");
+        var unsupported = Files.writeString(folder.resolve("text.mp3"), "not an audio file");
+        var decoder = new JavaSoundAudioDecoder();
+
+        assertThrows(AudioDecodeException.class, () -> decoder.decode(missing));
+        assertThrows(AudioDecodeException.class, () -> decoder.decode(unsupported));
     }
 
     private static int secondsToIndex(double seconds) {
