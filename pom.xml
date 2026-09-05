@@ -157,6 +157,8 @@
           <systemPropertyVariables>
             <!-- Runs the TestFX tests without opening windows. -->
             <glass.platform>Headless</glass.platform>
+            <!-- StageStyle.EXTENDED and HeaderBar are preview features in JavaFX 26. -->
+            <javafx.enablePreview>true</javafx.enablePreview>
           </systemPropertyVariables>
         </configuration>
       </plugin>
@@ -241,6 +243,10 @@
         <version>${javafx.plugin.version}</version>
         <configuration>
           <mainClass>${main.class}</mainClass>
+          <options>
+            <!-- StageStyle.EXTENDED and HeaderBar are preview features in JavaFX 26. -->
+            <option>-Djavafx.enablePreview=true</option>
+          </options>
         </configuration>
       </plugin>
       <plugin>
@@ -279,6 +285,8 @@
           <destination>${project.build.directory}/jpackage</destination>
           <javaOptions>
             <option>-Dfile.encoding=UTF-8</option>
+            <!-- StageStyle.EXTENDED and HeaderBar are preview features in JavaFX 26. -->
+            <option>-Djavafx.enablePreview=true</option>
           </javaOptions>
           <type>${jpackage.type}</type>
           <icon>${jpackage.icon}</icon>

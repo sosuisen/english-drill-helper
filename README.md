@@ -20,6 +20,13 @@ JavaFX libraries are downloaded by Maven, so no extra install is needed.
 mvn javafx:run
 ```
 
+## JavaFX Preview Features
+
+The main window uses `StageStyle.EXTENDED` and `HeaderBar`, which are preview
+features of JavaFX 26. They need the JVM option `-Djavafx.enablePreview=true`.
+The option is already set in `pom.xml` for `mvn javafx:run`, `mvn test`, and
+the packaged app (jpackage).
+
 ## How to Test
 
 ```bash
