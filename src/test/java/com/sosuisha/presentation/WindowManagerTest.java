@@ -69,4 +69,24 @@ class WindowManagerTest {
         assertSame(view.getScene(), window.getScene());
         assertEquals(StageStyle.DECORATED, window.getStyle());
     }
+
+    @Test
+    @DisplayName("showWindowすると、ウィンドウのアイコンにアプリのアイコン（images/icon.png）が設定される")
+    void show_window_sets_the_app_icon_on_the_window(FxRobot robot) {
+        var windowManager = new WindowManager();
+        windowManager.registerView(
+            new UnitView(
+                new UnitViewModel(
+                    List.of(), new NullAudioPlayer(), new NullUnitRepository(), Clock.systemUTC(),
+                    _ -> List.of(), Runnable::run
+                )
+            )
+        );
+
+        robot.interact(() -> windowManager.showWindow(UnitView.class, new Stage()));
+
+        var window = (Stage) robot.window("English Drill Helper");
+        assertEquals(1, window.getIcons().size());
+        assertEquals(256, window.getIcons().getFirst().getWidth());
+    }
 }
