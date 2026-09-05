@@ -351,6 +351,9 @@ public class UnitViewModel {
         player.play(unit.audioFile().path(), start, new PlaybackListener() {
             @Override
             public void positionChanged(Duration position) {
+                // A position before the start cannot belong to this playback. The media
+                // player reports its old position once before it seeks to the start.
+                if (position.compareTo(start) < 0) { return; }
                 UnitViewModel.this.position = position;
                 updatePositionText();
                 playingTurnRow.set(turnRowAt(position));

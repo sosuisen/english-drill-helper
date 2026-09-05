@@ -653,6 +653,25 @@ class UnitViewModelTest {
     }
 
     @Test
+    @DisplayName("ターンから再生を始めた直後に、プレイヤーが開始位置より前の位置を知らせても（MediaPlayer は購読した瞬間に 0 を知らせる）、再生中のターン行と再生位置の表示は変わらない")
+    void positions_before_the_start_of_the_playback_are_ignored() {
+        var listener = new AtomicReference<@Nullable PlaybackListener>();
+        var viewModel = newViewModel(
+            List.of(UNIT_1_1), SEGMENT_TABLE, Runnable::run, listenerCapturingPlayer(listener)
+        );
+        viewModel.selectUnit(UNIT_1_1);
+        WaitForAsyncUtils.waitForFxEvents();
+        viewModel.playTurn(viewModel.getTurnRows().get(2)); // the cue of drill 1 starts at 10 s
+        var rowBefore = viewModel.playingTurnRowProperty().get();
+        var textBefore = viewModel.positionTextProperty().get();
+
+        Objects.requireNonNull(listener.get()).positionChanged(Duration.ZERO);
+
+        assertEquals(rowBefore, viewModel.playingTurnRowProperty().get());
+        assertEquals(textBefore, viewModel.positionTextProperty().get());
+    }
+
+    @Test
     @DisplayName("再生位置がどのターンの開始位置より前（冒頭の無音）のときは、再生中のターン行は空である")
     void the_playing_turn_row_is_empty_before_the_first_turn() {
         var listener = new AtomicReference<@Nullable PlaybackListener>();
