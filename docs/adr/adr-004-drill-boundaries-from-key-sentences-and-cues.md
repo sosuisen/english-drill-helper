@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted（2026-09-05 実機で確認）
 
 ## Context
 

@@ -93,7 +93,7 @@ TDDの作業用todo。使い捨て。
     - [x] Drill.drillsOf(segments, 1) は、有音・無音11組の列を、11ターン（1-1 … 1-11）を持つ1つのドリルにする
     - [x] 既存の5ドリルのテストは Drill.drillsOf(segments, 5) で同じ結果になる
     - [x] UnitViewModel は、選択中ユニットの drillCount でドリルを作る。001_Unit 0.1.mp3 に11組のセグメントを与えると、ターン行は 1-1 … 1-11 の11行になることを確かめる
-- [x] ドリルの区切りをターン数の割り算ではなく、教材の構造（Key sentence の対と Cue）から決める（ADR-004、Proposed。Accepted はユーザーが実際にアプリを使ってから判断する）
+- [x] ドリルの区切りをターン数の割り算ではなく、教材の構造（Key sentence の対と Cue）から決める（ADR-004、Accepted）
   - 実測の構造（有音の長さの並びから）
     - 通常ユニット: 各ドリルは「Key sentence × 2 → (Cue → Answer × 2) × k」。k はドリルごとに異なることがある（Unit 3.4 は 2・1・2・2・1、Unit 1.5 は 2・2・2・2・1）
     - Unit 1.1〜1.3: Key の対はユニット冒頭に1組だけで、その後に (Cue → Answer × 2) が5組
