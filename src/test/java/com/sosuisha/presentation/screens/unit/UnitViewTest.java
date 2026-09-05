@@ -416,7 +416,7 @@ class UnitViewTest {
     }
 
     @Test
-    @DisplayName("画面のスタイルシート（unit.css）には、再生中の行（.list-cell.playing）に左端の青いバーと薄い青の背景を描く規則がある")
+    @DisplayName("画面のスタイルシート（unit.css）には、再生中の行（.list-cell.playing）に左端の緑のバーと薄い緑の背景（縞模様や青系の区切りと色相で見分けられる）を描く規則がある")
     void the_stylesheet_styles_the_playing_row() throws Exception {
         var css = new String(
             Objects.requireNonNull(getClass().getResourceAsStream("/styles/unit.css"))
@@ -425,8 +425,8 @@ class UnitViewTest {
         );
 
         assertTrue(css.contains(".list-cell.playing"));
-        assertTrue(css.contains("-color-accent-emphasis"));
-        assertTrue(css.contains("-color-accent-subtle"));
+        assertTrue(css.contains("-color-success-emphasis"));
+        assertTrue(css.contains("derive(-color-success-muted"));
     }
 
     @Test
