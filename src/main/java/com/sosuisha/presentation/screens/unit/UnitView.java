@@ -90,6 +90,12 @@ public class UnitView implements View {
                                             .build()
                                     )
                                     .spacing(10)
+                                    .build(),
+                                ListViewBuilder.<TurnRow>create()
+                                    .id("turns")
+                                    .items(viewModel.getTurnRows())
+                                    .cellFactory(_ -> turnCell())
+                                    .vGrowInVBox(Priority.ALWAYS)
                                     .build()
                             )
                             .spacing(10)
@@ -102,6 +108,16 @@ public class UnitView implements View {
             .width(WIDTH)
             .height(HEIGHT)
             .build();
+    }
+
+    private static ListCell<TurnRow> turnCell() {
+        return new ListCell<>() {
+            @Override
+            protected void updateItem(@Nullable TurnRow item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(item == null || empty ? null : item.label());
+            }
+        };
     }
 
     private ListCell<Unit> unitCell() {

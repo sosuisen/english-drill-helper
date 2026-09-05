@@ -47,6 +47,9 @@ public class UnitViewModel {
     private final ObservableList<Drill> drills = FXCollections.observableArrayList();
     private final ObservableList<Drill> readOnlyDrills =
         FXCollections.unmodifiableObservableList(drills);
+    private final ObservableList<TurnRow> turnRows = FXCollections.observableArrayList();
+    private final ObservableList<TurnRow> readOnlyTurnRows =
+        FXCollections.unmodifiableObservableList(turnRows);
     private final AudioPlayer player;
     private final UnitRepository repository;
     private final Clock clock;
@@ -81,6 +84,7 @@ public class UnitViewModel {
         segments.addListener(
             (ListChangeListener<Segment>) _ -> drills.setAll(Drill.drillsOf(segments))
         );
+        drills.addListener((ListChangeListener<Drill>) _ -> turnRows.setAll(turnRowsOf(drills)));
     }
 
     /**
@@ -114,6 +118,23 @@ public class UnitViewModel {
      */
     ObservableList<Drill> getDrills() {
         return readOnlyDrills;
+    }
+
+    /**
+     * Returns the rows of the turn list: every turn of every drill of the
+     * selected unit, in drill and turn order. The list follows the drill list
+     * and cannot be modified by the caller.
+     *
+     * @return read-only observable list of the turn rows
+     */
+    ObservableList<TurnRow> getTurnRows() {
+        return readOnlyTurnRows;
+    }
+
+    private static List<TurnRow> turnRowsOf(List<Drill> drills) {
+        return drills.stream()
+            .flatMap(drill -> drill.turns().stream().map(turn -> new TurnRow(drill.number(), turn)))
+            .toList();
     }
 
     /**

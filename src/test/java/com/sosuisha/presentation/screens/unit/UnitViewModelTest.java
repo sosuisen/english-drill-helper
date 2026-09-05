@@ -309,6 +309,34 @@ class UnitViewModelTest {
         assertEquals(List.of(), viewModel.getDrills());
     }
 
+    @Test
+    @DisplayName("ターン行の一覧は、ドリル一覧から「ドリル番号-ターン番号」の順に作られる。5ドリル × 2ターンなら 1-1、1-2、2-1 … 5-2 の10行")
+    void turn_rows_are_labeled_drill_number_dash_turn_number_in_drill_and_turn_order() {
+        Function<AudioFile, List<Segment>> tenPairs = _ -> pairs(10, Duration.ofSeconds(1));
+        var viewModel = newViewModel(List.of(UNIT_0_1), tenPairs, Runnable::run);
+
+        viewModel.selectUnit(UNIT_0_1);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals(
+            List.of("1-1", "1-2", "2-1", "2-2", "3-1", "3-2", "4-1", "4-2", "5-1", "5-2"),
+            viewModel.getTurnRows().stream().map(TurnRow::label).toList()
+        );
+    }
+
+    @Test
+    @DisplayName("ターン行の一覧は、選択を外してドリル一覧が空になると空になる")
+    void turn_rows_empty_when_the_drill_list_empties() {
+        var viewModel = newViewModel(List.of(UNIT_0_1), SEGMENT_TABLE, Runnable::run);
+        viewModel.selectUnit(UNIT_0_1);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        viewModel.selectUnit(null);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals(List.of(), viewModel.getTurnRows());
+    }
+
     /** Sound and silence pairs of the given length each, numbered from zero. */
     private static List<Segment> pairs(int count, Duration each) {
         var segments = new ArrayList<Segment>();

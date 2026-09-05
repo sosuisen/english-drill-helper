@@ -6,8 +6,10 @@ import static org.testfx.api.FxAssert.verifyThat;
 
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -21,8 +23,10 @@ import org.testfx.api.FxRobot;
 import org.testfx.framework.junit5.ApplicationExtension;
 import org.testfx.framework.junit5.Start;
 import org.testfx.matcher.control.LabeledMatchers;
+import org.testfx.util.WaitForAsyncUtils;
 
 import com.sosuisha.domain.model.AudioFile;
+import com.sosuisha.domain.model.Segment;
 import com.sosuisha.domain.model.Unit;
 import com.sosuisha.domain.repository.NullUnitRepository;
 import com.sosuisha.domain.service.NullAudioPlayer;
@@ -62,7 +66,7 @@ class UnitViewTest {
         };
         viewModel = new UnitViewModel(
             List.of(UNIT_0_1, UNIT_0_2, PLAYED_UNIT_0_3), player, new NullUnitRepository(),
-            Clock.fixed(Instant.EPOCH, ZoneOffset.UTC), _ -> List.of(), Runnable::run
+            Clock.fixed(Instant.EPOCH, ZoneOffset.UTC), UnitViewTest::segmentsOf, Runnable::run
         );
         var view = new UnitView(viewModel);
         stage.setScene(view.getScene());
@@ -106,10 +110,43 @@ class UnitViewTest {
     }
 
     @Test
+    @DisplayName("画面には、選択中のファイル名の下にターン行の一覧があり、ViewModelのターン行一覧に接続されている")
+    void the_screen_shows_the_turn_rows_of_the_view_model_below_the_selected_file_name(
+        FxRobot robot) {
+        @SuppressWarnings("unchecked")
+        ListView<TurnRow> listView = robot.lookup("#turns").queryAs(ListView.class);
+
+        assertEquals(viewModel.getTurnRows(), listView.getItems());
+    }
+
+    @Test
+    @DisplayName("ユニットを選ぶと、ターン行の一覧に「1-1」などのラベルが表示される")
+    void selecting_a_unit_shows_the_turn_labels_in_the_list(FxRobot robot) {
+        robot.clickOn("001_Unit 0.1.mp3");
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertTrue(robot.lookup("1-1").tryQuery().isPresent());
+        assertTrue(robot.lookup("5-1").tryQuery().isPresent());
+    }
+
+    @Test
     @DisplayName("停止ボタンを押すと、再生が停止する")
     void clicking_stop_stops_the_playback(FxRobot robot) {
         robot.clickOn("#stop");
 
         assertTrue(stopped.get());
+    }
+
+    /** Five sound and silence pairs for UNIT_0_1, to match the drill book; nothing for others. */
+    private static List<Segment> segmentsOf(AudioFile audioFile) {
+        if (!audioFile.fingerprint().equals(UNIT_0_1.audioFile().fingerprint())) {
+            return List.of();
+        }
+        var segments = new ArrayList<Segment>();
+        for (var i = 0; i < 10; i++) {
+            var kind = i % 2 == 0 ? Segment.Kind.SOUND : Segment.Kind.SILENCE;
+            segments.add(new Segment(i, Duration.ofSeconds(i), Duration.ofSeconds(1), kind));
+        }
+        return segments;
     }
 }
