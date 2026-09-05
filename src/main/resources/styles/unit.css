@@ -11,10 +11,9 @@
 
 /* The turn that is playing: a bar at the left edge and a light green tint, apart from the
    selection. Green differs in hue from the blue drill borders and cue text, and from the
-   grey striped rows. -color-success-subtle is too pale, so the tint is a lightened
-   -color-success-muted. */
+   grey striped rows. -color-success-subtle is too pale, so the tint is -color-success-muted. */
 .list-cell.playing {
-  -fx-background-color: derive(-color-success-muted, 40%);
+  -fx-background-color: -color-success-muted;
   -fx-border-color: transparent transparent transparent -color-success-emphasis;
   -fx-border-width: 0 0 0 3px;
 }

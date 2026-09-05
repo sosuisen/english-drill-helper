@@ -426,7 +426,7 @@ class UnitViewTest {
 
         assertTrue(css.contains(".list-cell.playing"));
         assertTrue(css.contains("-color-success-emphasis"));
-        assertTrue(css.contains("derive(-color-success-muted"));
+        assertTrue(css.contains("-color-success-muted"));
     }
 
     @Test
