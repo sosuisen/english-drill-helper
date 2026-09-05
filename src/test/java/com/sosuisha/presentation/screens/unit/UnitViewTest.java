@@ -21,6 +21,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material2.Material2MZ;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.api.FxRobot;
 import org.testfx.framework.junit5.ApplicationExtension;
@@ -233,6 +235,20 @@ class UnitViewTest {
         WaitForAsyncUtils.waitForFxEvents();
 
         assertTrue(robot.lookup("5-4").tryQuery().isPresent());
+    }
+
+    @Test
+    @DisplayName("Play ボタンと Stop ボタンは、文字ではなく Material 2 のアイコン（PLAY_ARROW と STOP）を持つアイコンボタンである")
+    void the_play_and_stop_buttons_are_icon_buttons_with_material_icons(FxRobot robot) {
+        var play = robot.lookup("#play").queryButton();
+        var stop = robot.lookup("#stop").queryButton();
+
+        assertEquals("", play.getText());
+        assertEquals("", stop.getText());
+        assertEquals(Material2MZ.PLAY_ARROW, ((FontIcon) play.getGraphic()).getIconCode());
+        assertEquals(Material2MZ.STOP, ((FontIcon) stop.getGraphic()).getIconCode());
+        assertTrue(play.getStyleClass().contains(Styles.BUTTON_ICON));
+        assertTrue(stop.getStyleClass().contains(Styles.BUTTON_ICON));
     }
 
     @Test

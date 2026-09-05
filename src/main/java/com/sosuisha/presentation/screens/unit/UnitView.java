@@ -3,6 +3,8 @@ package com.sosuisha.presentation.screens.unit;
 import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
+import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material2.Material2MZ;
 
 import com.sosuisha.domain.model.Unit;
 import com.sosuisha.presentation.View;
@@ -85,13 +87,15 @@ public class UnitView implements View {
                                     .withChildren(
                                         ButtonBuilder.create()
                                             .id("play")
-                                            .text("Play")
+                                            .graphic(new FontIcon(Material2MZ.PLAY_ARROW))
+                                            .addStyleClass(Styles.BUTTON_ICON)
                                             .addStyleClass(Styles.ACCENT)
                                             .onAction(_ -> viewModel.play())
                                             .build(),
                                         ButtonBuilder.create()
                                             .id("stop")
-                                            .text("Stop")
+                                            .graphic(new FontIcon(Material2MZ.STOP))
+                                            .addStyleClass(Styles.BUTTON_ICON)
                                             .onAction(_ -> viewModel.stop())
                                             .build()
                                     )
