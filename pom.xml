@@ -4,9 +4,9 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.sosuisha</groupId>
-  <artifactId>english-drill-helper</artifactId>
+  <artifactId>english-drill-player</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <description>English Drill Helper - a desktop helper for English drills</description>
+  <description>English Drill Player - a desktop player for English drills</description>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <javafx.plugin.version>0.0.8</javafx.plugin.version>
@@ -277,7 +277,7 @@
           </execution>
         </executions>
         <configuration>
-          <name>english-drill-helper</name>
+          <name>english-drill-player</name>
           <appVersion>1.0.0</appVersion>
           <vendor>${project.groupId}</vendor>
           <input>${project.build.directory}/app/</input>

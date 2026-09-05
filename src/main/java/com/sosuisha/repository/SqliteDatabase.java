@@ -31,9 +31,9 @@ import com.sosuisha.domain.exception.RepositoryException;
 public class SqliteDatabase {
     /** Default SQLite file, in the user home. */
     public static final Path DEFAULT_FILE =
-        Path.of(System.getProperty("user.home"), ".english-drill-helper", "drill.db");
+        Path.of(System.getProperty("user.home"), ".english-drill-player", "drill.db");
 
-    private static final String FILE_PROPERTY = "edh.drill.db";
+    private static final String FILE_PROPERTY = "edp.drill.db";
     private static final String SCHEMA_RESOURCE = "/db/schema.sql";
 
     private final Path file;
@@ -41,7 +41,7 @@ public class SqliteDatabase {
 
     /**
      * Resolves the path of the SQLite database file. The system property
-     * {@code edh.drill.db} takes precedence over {@link #DEFAULT_FILE}.
+     * {@code edp.drill.db} takes precedence over {@link #DEFAULT_FILE}.
      *
      * @return path of the SQLite database file
      */

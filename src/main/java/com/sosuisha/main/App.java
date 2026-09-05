@@ -27,7 +27,7 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 
 /**
- * JavaFX application of English Drill Helper.
+ * JavaFX application of English Drill Player.
  */
 public class App extends Application {
     /** Change this constant during development to open another window first. */

@@ -339,11 +339,11 @@ class UnitViewTest {
     }
 
     @Test
-    @DisplayName("画面の上部に HeaderBar があり、その中にアプリ名「English Drill Helper」が表示される")
+    @DisplayName("画面の上部に HeaderBar があり、その中にアプリ名「English Drill Player」が表示される")
     void the_screen_has_a_header_bar_with_the_app_name(FxRobot robot) {
         var headerBar = robot.lookup("#headerBar").query();
 
-        assertTrue(robot.from(headerBar).lookup("English Drill Helper").tryQuery().isPresent());
+        assertTrue(robot.from(headerBar).lookup("English Drill Player").tryQuery().isPresent());
     }
 
     @Test

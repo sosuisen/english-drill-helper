@@ -42,7 +42,7 @@ import javafx.stage.StageStyle;
  * View for the unit screen.
  */
 public class UnitView implements View {
-    private static final String TITLE = "English Drill Helper";
+    private static final String TITLE = "English Drill Player";
     private static final double WIDTH = 624;
     private static final double HEIGHT = 640;
     private static final double LAST_PLAYED_COLUMN_WIDTH = 130;

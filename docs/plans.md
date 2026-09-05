@@ -48,7 +48,7 @@ TDDの作業用todo。使い捨て。
   - 実機で見つかった不具合: 停止すると現在のターンが最後にクリックしたターンへ戻る。原因は MediaPlayer.stop() が再生位置を開始位置へ戻し、その位置が通知されること。MediaAudioPlayer の stop() で位置の購読を先に解除して直した（MediaPlayer が必要でテストできないため、ユーザーの許可を得てテスト無し。実機で確認）
 
 # その他
-- [ ] アプリ名を English Drill Playerにする。
+- [x] アプリ名を English Drill Playerにする。
   - 名前が現れる場所（調査済み）
     - 表示名「English Drill Helper」: UnitView の TITLE（ウィンドウタイトルと HeaderBar）、App の Javadoc、pom の description、README と storymap の見出し、ADR-001 と ADR-002 の本文。テストは UnitViewTest（HeaderBar の文字）、WindowManagerTest（ウィンドウの検索）、AppTest（タイトルの対応表）
     - 技術名「english-drill-helper」: pom の artifactId と jpackage の name、SqliteDatabase の既定の DB フォルダ ~/.english-drill-helper（schema.sql のコメント、SqliteDatabaseTest、ADR-002 にも記載）、AppTest の一時フォルダ名、prd.md の dirPath
@@ -56,11 +56,11 @@ TDDの作業用todo。使い捨て。
   - 設計案: 表示名は「English Drill Player」に変える。artifactId と jpackage の name は english-drill-player に変える（インストーラの名前になる）。ADR の本文は当時の記録なので変えず、脚注で改名を記す
   - 決定（ユーザー）: DB フォルダは ~/.english-drill-player に変える（今までの記録の移行はしない）。ADR-002 の記載を改定する。システムプロパティの接頭辞は edh から edp に変える（edp.drill.db、edp.survey.folder）。README と起動オプションも書き換える
   - テストリスト
-    - [ ] SqliteDatabase: システムプロパティ edp.drill.db が未指定のとき、既定の DB は ~/.english-drill-player/drill.db である（SqliteDatabaseTest の書き換え）
-    - [ ] SqliteDatabase: システムプロパティ edp.drill.db で DB の場所を指定できる（既存テストの書き換え。edh は読まない）
-    - [ ] DrillBookSurveyTest: 実フォルダ検証は edp.survey.folder で有効になる（テスト自身の書き換え）
-    - [ ] View: HeaderBar とウィンドウタイトルの文字が「English Drill Player」である（UnitViewTest、WindowManagerTest、AppTest の書き換え）
-    - [ ] 文書と pom: README、storymap、pom の description と artifactId、jpackage の name を改名する（テストなし。mvn package で確認）
+    - [x] SqliteDatabase: システムプロパティ edp.drill.db が未指定のとき、既定の DB は ~/.english-drill-player/drill.db である（SqliteDatabaseTest の書き換え）
+    - [x] SqliteDatabase: システムプロパティ edp.drill.db で DB の場所を指定できる（既存テストの書き換え。edh は読まない）
+    - [x] DrillBookSurveyTest: 実フォルダ検証は edp.survey.folder で有効になる（テスト自身の書き換え）
+    - [x] View: HeaderBar とウィンドウタイトルの文字が「English Drill Player」である（UnitViewTest、WindowManagerTest、AppTest の書き換え）
+    - [x] 文書と pom: README、storymap、pom の description と artifactId、jpackage の name を改名する（テストなし。mvn package で確認）
 
 # バグ
 - [x] ターンリストの下のほうをクリックすると、スクロールバーが上に戻ってしまう。

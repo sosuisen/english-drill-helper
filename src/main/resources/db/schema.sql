@@ -1,4 +1,4 @@
--- Schema of the database of the app (~/.english-drill-helper/drill.db).
+-- Schema of the database of the app (~/.english-drill-player/drill.db).
 -- Used both by the jOOQ code generator (parsed with H2) and at runtime
 -- to create the tables in SQLite, so keep it portable between the two.
 -- The primary key is the SHA-256 of the audio file content in lower-case

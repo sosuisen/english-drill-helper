@@ -27,9 +27,9 @@ class AppTest {
 
     @Start
     void setup(Stage stage) throws Exception {
-        var folder = Files.createTempDirectory("english-drill-helper-test");
+        var folder = Files.createTempDirectory("english-drill-player-test");
         unitDb = folder.resolve("drill.db");
-        System.setProperty("edh.drill.db", unitDb.toString());
+        System.setProperty("edp.drill.db", unitDb.toString());
         // The injected primary stage is reused across tests and rejects
         // initStyle, so App gets a fresh stage.
         this.stage = new Stage();
@@ -38,11 +38,11 @@ class AppTest {
 
     @AfterEach
     void cleanup() {
-        System.clearProperty("edh.drill.db");
+        System.clearProperty("edp.drill.db");
     }
 
     @Test
-    @DisplayName("起動すると、edh.drill.dbで指定した場所にDBファイルが作られる")
+    @DisplayName("起動すると、edp.drill.dbで指定した場所にDBファイルが作られる")
     void app_startup_creates_the_database_file_at_the_place_given_by_edh_unit_db() {
         assertTrue(Files.exists(unitDb));
     }
@@ -50,7 +50,7 @@ class AppTest {
     @Test
     @DisplayName("アプリを起動すると、FIRST_VIEW定数で指定したViewのウィンドウが表示される")
     void app_startup_shows_the_window_of_the_view_specified_by_first_view_constant() {
-        var expectedTitles = Map.of(UnitView.class, "English Drill Helper");
+        var expectedTitles = Map.of(UnitView.class, "English Drill Player");
 
         assertTrue(stage.isShowing());
         assertEquals(expectedTitles.get(App.FIRST_VIEW), stage.getTitle());

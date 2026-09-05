@@ -1,4 +1,4 @@
-# English Drill Helper
+# English Drill Player
 
 「復習」は大事なのであえて一番最後のアクティビティに分けてある。
 

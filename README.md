@@ -1,4 +1,4 @@
-# English Drill Helper
+# English Drill Player
 
 A desktop helper for English drills, built with JavaFX.
 
@@ -41,7 +41,7 @@ The tests run in headless mode, so no window is opened.
 over every mp3 file in a folder. It runs only when the folder is given:
 
 ```bash
-mvn test -Dtest=DrillBookSurveyTest "-Dedh.survey.folder=<path to the folder of the drill files>"
+mvn test -Dtest=DrillBookSurveyTest "-Dedp.survey.folder=<path to the folder of the drill files>"
 ```
 
 It fails when a file cannot be split into drills, and prints the sound and

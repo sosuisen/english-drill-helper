@@ -68,7 +68,7 @@ class WindowManagerTest {
 
         robot.interact(() -> windowManager.showWindow(UnitView.class, new Stage()));
 
-        var window = (Stage) robot.window("English Drill Helper");
+        var window = (Stage) robot.window("English Drill Player");
         assertTrue(window.isShowing());
         assertSame(view.getScene(), window.getScene());
         assertEquals(StageStyle.EXTENDED, window.getStyle());
@@ -90,7 +90,7 @@ class WindowManagerTest {
 
         robot.interact(() -> windowManager.showWindow(UnitView.class, new Stage()));
 
-        var window = (Stage) robot.window("English Drill Helper");
+        var window = (Stage) robot.window("English Drill Player");
         assertEquals(1, window.getIcons().size());
         assertEquals(256, window.getIcons().getFirst().getWidth());
     }

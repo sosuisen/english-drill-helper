@@ -22,14 +22,14 @@ import com.sosuisha.domain.model.Unit;
 
 /**
  * Runs the detector and the drill book parser over a real audio folder. It
- * runs only when the system property {@code edh.survey.folder} names the
+ * runs only when the system property {@code edp.survey.folder} names the
  * folder, so the regular build does not depend on the drill files.
  */
 class DrillBookSurveyTest {
-    private static final String FOLDER_PROPERTY = "edh.survey.folder";
+    private static final String FOLDER_PROPERTY = "edp.survey.folder";
 
     @Test
-    @DisplayName("実際の音声フォルダの全ファイルを検出器と解析器で処理しても、例外が出ない（edh.survey.folder が指定されたときだけ実行）")
+    @DisplayName("実際の音声フォルダの全ファイルを検出器と解析器で処理しても、例外が出ない（edp.survey.folder が指定されたときだけ実行）")
     void every_file_of_the_real_folder_is_parsed_without_an_exception() throws IOException {
         var folder = System.getProperty(FOLDER_PROPERTY);
         assumeTrue(folder != null, "set -D" + FOLDER_PROPERTY + " to run the survey");
