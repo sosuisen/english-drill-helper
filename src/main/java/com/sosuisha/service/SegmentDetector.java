@@ -110,9 +110,10 @@ public class SegmentDetector {
         var startFrame = 0L;
         for (var run : runs) {
             var endFrame = startFrame + run.frames();
+            var start = Duration.ofNanos(nanosAt(startFrame, sampleRate));
             var duration =
                 Duration.ofNanos(nanosAt(endFrame, sampleRate) - nanosAt(startFrame, sampleRate));
-            segments.add(new Segment(duration, run.kind()));
+            segments.add(new Segment(segments.size(), start, duration, run.kind()));
             startFrame = endFrame;
         }
         return List.copyOf(segments);

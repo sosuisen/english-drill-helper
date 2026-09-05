@@ -6,7 +6,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.IntStream;
 
 import com.sosuisha.db.tables.records.SegmentRecord;
 import com.sosuisha.domain.exception.RepositoryException;
@@ -48,15 +47,14 @@ public class SqliteSegmentRepository implements SegmentRepository {
     }
 
     private static List<SegmentRecord> toRecords(String fingerprint, List<Segment> segments) {
-        return IntStream.range(0, segments.size())
-            .mapToObj(position -> toRecord(fingerprint, position, segments.get(position)))
-            .toList();
+        return segments.stream().map(segment -> toRecord(fingerprint, segment)).toList();
     }
 
-    private static SegmentRecord toRecord(String fingerprint, int position, Segment segment) {
+    private static SegmentRecord toRecord(String fingerprint, Segment segment) {
         var record = new SegmentRecord();
         record.setFingerprint(fingerprint);
-        record.setPosition(position);
+        record.setPosition(segment.index());
+        record.setStartMs(segment.start().toMillis());
         record.setDurationMs(segment.duration().toMillis());
         record.setKind(segment.kind().name());
         return record;
@@ -83,7 +81,10 @@ public class SqliteSegmentRepository implements SegmentRepository {
 
     private static Segment toSegment(SegmentRecord record) {
         return new Segment(
-            Duration.ofMillis(record.getDurationMs()), Segment.Kind.valueOf(record.getKind())
+            record.getPosition(),
+            Duration.ofMillis(record.getStartMs()),
+            Duration.ofMillis(record.getDurationMs()),
+            Segment.Kind.valueOf(record.getKind())
         );
     }
 }

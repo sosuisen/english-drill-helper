@@ -17,9 +17,9 @@ class SqliteSegmentRepositoryTest {
     private static final String FINGERPRINT =
         "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
     private static final List<Segment> SEGMENTS = List.of(
-        new Segment(Duration.ofMillis(1000), Segment.Kind.SOUND),
-        new Segment(Duration.ofMillis(3000), Segment.Kind.SILENCE),
-        new Segment(Duration.ofMillis(2500), Segment.Kind.SOUND)
+        new Segment(0, Duration.ZERO, Duration.ofMillis(1000), Segment.Kind.SOUND),
+        new Segment(1, Duration.ofMillis(1000), Duration.ofMillis(3000), Segment.Kind.SILENCE),
+        new Segment(2, Duration.ofMillis(4000), Duration.ofMillis(2500), Segment.Kind.SOUND)
     );
 
     @Test
@@ -50,7 +50,8 @@ class SqliteSegmentRepositoryTest {
         var repository =
             new SqliteSegmentRepository(new SqliteDatabase(folder.resolve("drill.db")));
         repository.saveSegments(FINGERPRINT, SEGMENTS);
-        var shorter = List.of(new Segment(Duration.ofMillis(6500), Segment.Kind.SOUND));
+        var shorter =
+            List.of(new Segment(0, Duration.ZERO, Duration.ofMillis(6500), Segment.Kind.SOUND));
 
         repository.saveSegments(FINGERPRINT, shorter);
 

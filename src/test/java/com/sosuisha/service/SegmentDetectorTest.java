@@ -31,7 +31,10 @@ class SegmentDetectorTest {
 
         var segments = detector.detect(pcm);
 
-        assertEquals(List.of(new Segment(Duration.ofSeconds(3), Segment.Kind.SOUND)), segments);
+        assertEquals(
+            List.of(new Segment(0, Duration.ZERO, Duration.ofSeconds(3), Segment.Kind.SOUND)),
+            segments
+        );
     }
 
     @Test
@@ -43,9 +46,9 @@ class SegmentDetectorTest {
 
         assertEquals(
             List.of(
-                new Segment(Duration.ofSeconds(1), Segment.Kind.SOUND),
-                new Segment(Duration.ofSeconds(3), Segment.Kind.SILENCE),
-                new Segment(Duration.ofSeconds(1), Segment.Kind.SOUND)
+                new Segment(0, Duration.ZERO, Duration.ofSeconds(1), Segment.Kind.SOUND),
+                new Segment(1, Duration.ofSeconds(1), Duration.ofSeconds(3), Segment.Kind.SILENCE),
+                new Segment(2, Duration.ofSeconds(4), Duration.ofSeconds(1), Segment.Kind.SOUND)
             ),
             segments
         );
@@ -59,7 +62,8 @@ class SegmentDetectorTest {
         var segments = detector.detect(pcm);
 
         assertEquals(
-            List.of(new Segment(Duration.ofMillis(2500), Segment.Kind.SOUND)), segments
+            List.of(new Segment(0, Duration.ZERO, Duration.ofMillis(2500), Segment.Kind.SOUND)),
+            segments
         );
     }
 
@@ -72,9 +76,9 @@ class SegmentDetectorTest {
 
         assertEquals(
             List.of(
-                new Segment(Duration.ofSeconds(1), Segment.Kind.SOUND),
-                new Segment(Duration.ofSeconds(1), Segment.Kind.SILENCE),
-                new Segment(Duration.ofSeconds(1), Segment.Kind.SOUND)
+                new Segment(0, Duration.ZERO, Duration.ofSeconds(1), Segment.Kind.SOUND),
+                new Segment(1, Duration.ofSeconds(1), Duration.ofSeconds(1), Segment.Kind.SILENCE),
+                new Segment(2, Duration.ofSeconds(2), Duration.ofSeconds(1), Segment.Kind.SOUND)
             ),
             segments
         );
@@ -89,8 +93,8 @@ class SegmentDetectorTest {
 
         assertEquals(
             List.of(
-                new Segment(Duration.ofSeconds(3), Segment.Kind.SILENCE),
-                new Segment(Duration.ofSeconds(1), Segment.Kind.SOUND)
+                new Segment(0, Duration.ZERO, Duration.ofSeconds(3), Segment.Kind.SILENCE),
+                new Segment(1, Duration.ofSeconds(3), Duration.ofSeconds(1), Segment.Kind.SOUND)
             ),
             segments
         );
@@ -105,8 +109,8 @@ class SegmentDetectorTest {
 
         assertEquals(
             List.of(
-                new Segment(Duration.ofSeconds(1), Segment.Kind.SOUND),
-                new Segment(Duration.ofSeconds(3), Segment.Kind.SILENCE)
+                new Segment(0, Duration.ZERO, Duration.ofSeconds(1), Segment.Kind.SOUND),
+                new Segment(1, Duration.ofSeconds(1), Duration.ofSeconds(3), Segment.Kind.SILENCE)
             ),
             segments
         );
@@ -122,7 +126,8 @@ class SegmentDetectorTest {
         var total = segments.stream().map(Segment::duration).reduce(Duration.ZERO, Duration::plus);
         assertEquals(Duration.ofMillis(1010), total);
         assertEquals(
-            List.of(new Segment(Duration.ofMillis(1010), Segment.Kind.SOUND)), segments
+            List.of(new Segment(0, Duration.ZERO, Duration.ofMillis(1010), Segment.Kind.SOUND)),
+            segments
         );
     }
 
@@ -139,8 +144,14 @@ class SegmentDetectorTest {
         var quieter =
             detectorAtThreshold.detect(pcm(constant(3.0, (short) (HALF_OF_FULL_SCALE / 2))));
 
-        assertEquals(List.of(new Segment(Duration.ofSeconds(3), Segment.Kind.SOUND)), atThreshold);
-        assertEquals(List.of(new Segment(Duration.ofSeconds(3), Segment.Kind.SILENCE)), quieter);
+        assertEquals(
+            List.of(new Segment(0, Duration.ZERO, Duration.ofSeconds(3), Segment.Kind.SOUND)),
+            atThreshold
+        );
+        assertEquals(
+            List.of(new Segment(0, Duration.ZERO, Duration.ofSeconds(3), Segment.Kind.SILENCE)),
+            quieter
+        );
     }
 
     @Test
@@ -150,7 +161,10 @@ class SegmentDetectorTest {
 
         var segments = detector.detect(pcm);
 
-        assertEquals(List.of(new Segment(Duration.ofSeconds(3), Segment.Kind.SILENCE)), segments);
+        assertEquals(
+            List.of(new Segment(0, Duration.ZERO, Duration.ofSeconds(3), Segment.Kind.SILENCE)),
+            segments
+        );
     }
 
     @Test

@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS unit (
 CREATE TABLE IF NOT EXISTS segment (
   fingerprint VARCHAR NOT NULL,
   position INTEGER NOT NULL,
+  start_ms BIGINT NOT NULL,
   duration_ms BIGINT NOT NULL,
   kind VARCHAR NOT NULL,
   PRIMARY KEY (fingerprint, position)

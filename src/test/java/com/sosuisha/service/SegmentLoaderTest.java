@@ -20,8 +20,8 @@ import com.sosuisha.domain.repository.NullSegmentRepository;
 class SegmentLoaderTest {
     private static final Path WAV = Path.of("src/test/resources/audio/tone-with-silences.wav");
     private static final List<Segment> CACHED_SEGMENTS = List.of(
-        new Segment(Duration.ofMillis(1000), Segment.Kind.SOUND),
-        new Segment(Duration.ofMillis(3000), Segment.Kind.SILENCE)
+        new Segment(0, Duration.ZERO, Duration.ofMillis(1000), Segment.Kind.SOUND),
+        new Segment(1, Duration.ofMillis(1000), Duration.ofMillis(3000), Segment.Kind.SILENCE)
     );
 
     private final JavaSoundAudioDecoder decoder = new JavaSoundAudioDecoder();
