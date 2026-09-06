@@ -17,3 +17,10 @@ CREATE TABLE IF NOT EXISTS segment (
   kind VARCHAR NOT NULL,
   PRIMARY KEY (fingerprint, position)
 );
+-- Folders of drill audio files the learner registered, in the order of
+-- registration. The name is the drill name the learner gave the folder.
+CREATE TABLE IF NOT EXISTS audio_folder (
+  id INTEGER NOT NULL PRIMARY KEY,
+  name VARCHAR NOT NULL,
+  path VARCHAR NOT NULL
+);

@@ -33,6 +33,7 @@ import org.testfx.matcher.control.LabeledMatchers;
 import org.testfx.util.WaitForAsyncUtils;
 
 import com.sosuisha.domain.model.AudioFile;
+import com.sosuisha.domain.model.AudioFolder;
 import com.sosuisha.domain.model.Segment;
 import com.sosuisha.domain.model.Unit;
 import com.sosuisha.domain.repository.NullUnitRepository;
@@ -74,6 +75,7 @@ class UnitViewTest {
         new AtomicReference<>();
     private final AtomicInteger playCount = new AtomicInteger();
     private final AtomicBoolean stopped = new AtomicBoolean(false);
+    private final AtomicInteger settingsOpened = new AtomicInteger();
     private final AtomicBoolean paused = new AtomicBoolean(false);
     private final AtomicBoolean resumed = new AtomicBoolean(false);
 
@@ -104,11 +106,13 @@ class UnitViewTest {
             }
         };
         viewModel = new UnitViewModel(
-            List.of(UNIT_1_1, UNIT_1_2, PLAYED_UNIT_1_3), AUDIO_FOLDER, player,
-            new NullUnitRepository(),
-            Clock.fixed(Instant.EPOCH, ZoneOffset.UTC), UnitViewTest::segmentsOf, Runnable::run
+            player, new NullUnitRepository(), Clock.fixed(Instant.EPOCH, ZoneOffset.UTC),
+            UnitViewTest::segmentsOf, Runnable::run
         );
-        var view = new UnitView(viewModel);
+        viewModel.showFolder(
+            new AudioFolder("drills", AUDIO_FOLDER), List.of(UNIT_1_1, UNIT_1_2, PLAYED_UNIT_1_3)
+        );
+        var view = new UnitView(viewModel, settingsOpened::incrementAndGet);
         stage.setScene(view.getScene());
         stage.setTitle(view.getTitle());
         stage.show();
@@ -335,7 +339,8 @@ class UnitViewTest {
     @SuppressWarnings("deprecation") // StageStyle.EXTENDED is a preview feature of JavaFX 26.
     @DisplayName("UnitView は HeaderBar を持つので、ウィンドウのスタイルとして EXTENDED（タイトルバーと一体のメニューバー拡張）を宣言する")
     void the_unit_view_declares_the_extended_stage_style() {
-        assertEquals(StageStyle.EXTENDED, new UnitView(viewModel).stageStyle());
+        assertEquals(StageStyle.EXTENDED, new UnitView(viewModel, () -> {
+        }).stageStyle());
     }
 
     @Test
@@ -368,11 +373,16 @@ class UnitViewTest {
     }
 
     @Test
-    @DisplayName("ユニット一覧の Card の header には、現在開いている音声フォルダのパスが表示される")
-    void the_unit_pane_header_shows_the_audio_folder(FxRobot robot) {
-        var unitPane = robot.lookup("#unitPane").queryAs(Card.class);
+    @DisplayName("ユニット一覧の Card の header（ID audioFolder）には、音声フォルダのパスではなくドリル名が表示され、別のフォルダを示すとその名前に変わる")
+    void the_unit_pane_header_shows_the_drill_name_of_the_audio_folder(FxRobot robot) {
+        verifyThat("#audioFolder", LabeledMatchers.hasText("drills"));
 
-        assertEquals(AUDIO_FOLDER.toString(), ((Label) unitPane.getHeader()).getText());
+        robot.interact(
+            () -> viewModel.showFolder(new AudioFolder("英語のハノン", AUDIO_FOLDER), List.of(UNIT_1_1))
+        );
+        WaitForAsyncUtils.waitForFxEvents();
+
+        verifyThat("#audioFolder", LabeledMatchers.hasText("英語のハノン"));
     }
 
     @Test
@@ -392,6 +402,20 @@ class UnitViewTest {
 
         assertEquals(8, playback.getPadding().getLeft());
         assertEquals(8, playback.getPadding().getRight());
+    }
+
+    @Test
+    @DisplayName("ユニット一覧の Card の header には設定ボタン（ID settings、SETTINGS アイコンのアイコンボタン）があり、押すと音声フォルダの設定ダイアログを開く処理が呼ばれる")
+    void the_unit_pane_header_has_a_settings_button_that_opens_the_audio_folder_dialog(
+        FxRobot robot) {
+        var unitPane = robot.lookup("#unitPane").queryAs(Card.class);
+        var settings = robot.from(unitPane.getHeader()).lookup("#settings").queryButton();
+        assertEquals(Material2MZ.SETTINGS, ((FontIcon) settings.getGraphic()).getIconCode());
+        assertTrue(settings.getStyleClass().contains(Styles.BUTTON_ICON));
+
+        robot.clickOn(settings);
+
+        assertEquals(1, settingsOpened.get());
     }
 
     @Test

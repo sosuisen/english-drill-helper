@@ -36,6 +36,7 @@ import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.HeaderBar;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.stage.StageStyle;
 
 /**
@@ -56,16 +57,19 @@ public class UnitView implements View {
     private static final double PANE_GAP = 8;
 
     private final UnitViewModel viewModel;
+    private final Runnable openSettings;
     private final Scene scene;
 
     /**
      * Creates the view.
      *
      * @param viewModel view model of the unit screen
-     * @throws NullPointerException if viewModel is null
+     * @param openSettings opens the dialog that registers the audio folder
+     * @throws NullPointerException if viewModel or openSettings is null
      */
-    public UnitView(UnitViewModel viewModel) {
+    public UnitView(UnitViewModel viewModel, Runnable openSettings) {
         this.viewModel = Objects.requireNonNull(viewModel, "viewModel must not be null");
+        this.openSettings = Objects.requireNonNull(openSettings, "openSettings must not be null");
         this.scene = buildSceneGraph();
     }
 
@@ -96,6 +100,31 @@ public class UnitView implements View {
         return headerBar;
     }
 
+    // The header names the audio folder (the drill name) and opens the settings
+    // dialog, where the learner registers the folder.
+    private HBox unitPaneHeader() {
+        var spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        return HBoxBuilder
+            .withChildren(
+                LabelBuilder.create()
+                    .id("audioFolder")
+                    .addStyleClass(Styles.TITLE_3)
+                    .style("-fx-text-fill: -color-accent-muted;") // as light as the cue rows
+                    .textPropertyApply(text -> text.bind(viewModel.audioFolderNameProperty()))
+                    .build(),
+                spacer,
+                ButtonBuilder.create()
+                    .id("settings")
+                    .graphic(new FontIcon(Material2MZ.SETTINGS))
+                    .addStyleClass(Styles.BUTTON_ICON)
+                    .onAction(_ -> openSettings.run())
+                    .build()
+            )
+            .alignment(Pos.CENTER_LEFT)
+            .build();
+    }
+
     private Scene buildSceneGraph() {
         return SceneBuilder
             .withRoot(
@@ -106,14 +135,7 @@ public class UnitView implements View {
                             .withChildren(
                                 card(
                                     "unitPane",
-                                    LabelBuilder.create()
-                                        .id("audioFolder")
-                                        .addStyleClass(Styles.TITLE_3)
-                                        .style("-fx-text-fill: -color-accent-muted;") // as light as
-                                                                                      // the cue
-                                                                                      // rows
-                                        .text(viewModel.getAudioFolderText())
-                                        .build(),
+                                    unitPaneHeader(),
                                     TableViewBuilder.<Unit>create()
                                         .id("units")
                                         .addStyleClass(Tweaks.EDGE_TO_EDGE)

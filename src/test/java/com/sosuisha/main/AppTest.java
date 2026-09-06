@@ -3,6 +3,7 @@ package com.sosuisha.main;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.testfx.api.FxAssert.verifyThat;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,12 +13,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.testfx.api.FxRobot;
 import org.testfx.framework.junit5.ApplicationExtension;
 import org.testfx.framework.junit5.Start;
+import org.testfx.matcher.control.LabeledMatchers;
 
 import com.sosuisha.presentation.screens.unit.UnitView;
 
 import javafx.application.Application;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 @ExtendWith(ApplicationExtension.class)
@@ -66,8 +70,14 @@ class AppTest {
     }
 
     @Test
-    @DisplayName("決められた音声フォルダは D:\\Dropbox\\英語のハノン_210407 である")
-    void the_fixed_audio_folder_is_the_hanon_folder_in_dropbox() {
-        assertEquals(Path.of("D:\\Dropbox\\英語のハノン_210407"), App.AUDIO_FOLDER);
+    @DisplayName("起動時に音声フォルダが未登録なら、音声フォルダの登録ダイアログが本体のウィンドウをオーナーとするモーダルで開く。本体のユニット一覧は空で、header のドリル名も空")
+    void app_startup_opens_the_audio_folder_dialog_as_a_modal_when_no_folder_is_registered(
+        FxRobot robot) {
+        var dialog = (Stage) robot.window("音声フォルダの登録");
+
+        assertTrue(dialog.isShowing());
+        assertEquals(Modality.WINDOW_MODAL, dialog.getModality());
+        assertEquals(stage, dialog.getOwner());
+        verifyThat("#audioFolder", LabeledMatchers.hasText(""));
     }
 }

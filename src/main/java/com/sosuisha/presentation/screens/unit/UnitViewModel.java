@@ -1,6 +1,5 @@
 package com.sosuisha.presentation.screens.unit;
 
-import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
@@ -14,6 +13,7 @@ import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 import com.sosuisha.domain.model.AudioFile;
+import com.sosuisha.domain.model.AudioFolder;
 import com.sosuisha.domain.model.Drill;
 import com.sosuisha.domain.model.DrillBook;
 import com.sosuisha.domain.model.Segment;
@@ -50,6 +50,7 @@ public class UnitViewModel {
         new ReadOnlyObjectWrapper<>(Optional.empty());
     private final ReadOnlyStringWrapper selectedUnitTitle = new ReadOnlyStringWrapper();
     private final ReadOnlyBooleanWrapper unitSelected = new ReadOnlyBooleanWrapper();
+    private final ReadOnlyStringWrapper audioFolderName = new ReadOnlyStringWrapper("");
     private final ReadOnlyObjectWrapper<PlaybackState> playbackState =
         new ReadOnlyObjectWrapper<>(PlaybackState.STOPPED);
     private final ObservableList<Segment> segments = FXCollections.observableArrayList();
@@ -70,13 +71,11 @@ public class UnitViewModel {
     private final Clock clock;
     private final Function<AudioFile, List<Segment>> segmentLoader;
     private final Executor executor;
-    private final Path audioFolder;
 
     /**
      * Creates the view model.
      *
      * @param units units, in the order shown to the user
-     * @param audioFolder folder the units were loaded from, shown to the user
      * @param player player that plays the selected unit
      * @param repository database that keeps the records of the units
      * @param clock clock that gives the time when the playback stops
@@ -85,18 +84,14 @@ public class UnitViewModel {
      * @throws NullPointerException if any argument is null
      */
     public UnitViewModel(
-        List<Unit> units, Path audioFolder, AudioPlayer player, UnitRepository repository,
-        Clock clock,
+        AudioPlayer player, UnitRepository repository, Clock clock,
         Function<AudioFile, List<Segment>> segmentLoader, Executor executor) {
-        Objects.requireNonNull(units, "units must not be null");
-        this.audioFolder = Objects.requireNonNull(audioFolder, "audioFolder must not be null");
         this.player = Objects.requireNonNull(player, "player must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
         this.segmentLoader =
             Objects.requireNonNull(segmentLoader, "segmentLoader must not be null");
         this.executor = Objects.requireNonNull(executor, "executor must not be null");
-        this.units.setAll(units);
         selectedUnitTitle.bind(selectedUnit.map(unit -> unit.map(Unit::title).orElse("")));
         unitSelected.bind(selectedUnit.map(Optional::isPresent));
         segments.addListener(
@@ -301,12 +296,30 @@ public class UnitViewModel {
     }
 
     /**
-     * Returns the audio folder the units were loaded from, as text to show.
+     * Shows a registered audio folder: its units replace the list, and its
+     * name is shown as the drill name. The playback stops and the selection
+     * is cleared, because they belonged to the folder shown before.
      *
-     * @return the path of the folder
+     * @param folder the registered folder
+     * @param units units found in the folder
+     * @throws NullPointerException if folder or units is null
      */
-    public String getAudioFolderText() {
-        return audioFolder.toString();
+    public void showFolder(AudioFolder folder, List<Unit> units) {
+        Objects.requireNonNull(folder, "folder must not be null");
+        Objects.requireNonNull(units, "units must not be null");
+        selectUnit(null); // stops the playback of the folder shown before
+        this.units.setAll(units);
+        audioFolderName.set(folder.name());
+    }
+
+    /**
+     * Returns the name of the audio folder shown, given by the learner as the
+     * drill name.
+     *
+     * @return read-only property of the name, empty while no folder is shown
+     */
+    public ReadOnlyStringProperty audioFolderNameProperty() {
+        return audioFolderName.getReadOnlyProperty();
     }
 
     /**
